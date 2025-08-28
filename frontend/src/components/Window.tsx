@@ -16,7 +16,7 @@ const WindowContainer = styled(motion.div)<{ $isMaximized: boolean; $zIndex: num
   background: ${props => props.$isDark ? 'rgba(26, 26, 26, 0.98)' : 'rgba(255, 255, 255, 0.95)'};
   backdrop-filter: blur(20px);
   border: 1px solid ${props => props.$isDark ? 'rgba(60, 60, 60, 0.3)' : 'rgba(255, 255, 255, 0.2)'};
-  border-radius: ${props => props.$isMaximized ? '0px' : '12px'};
+  border-radius: ${props => props.$isMaximized ? '0px' : '18px'};
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   z-index: ${props => props.$zIndex};
@@ -33,7 +33,7 @@ const WindowContainer = styled(motion.div)<{ $isMaximized: boolean; $zIndex: num
 const WindowHeader = styled.div<{ $isDark: boolean }>`
   height: 32px;
   background: transparent;
-  border-bottom: 1px solid ${props => props.$isDark ? 'rgba(60, 60, 60, 0.3)' : 'transparent'};
+  border-bottom: 0px solid ${props => props.$isDark ? 'rgba(60, 60, 60, 0.3)' : 'transparent'};
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -65,7 +65,7 @@ const ControlButton = styled.button<{ $hoverColor: string; $isDark: boolean; $sh
   height: 12px;
   border-radius: 50%;
   border: none;
-  background: ${props => props.$isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'};
+  background: ${props => props.$isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)'};
   cursor: pointer;
   transition: background-color 0.6s ease;
   flex-shrink: 0;
@@ -86,7 +86,7 @@ const ControlButton = styled.button<{ $hoverColor: string; $isDark: boolean; $sh
       transform: translate(-50%, -50%);
       width: 4px;
       height: 4px;
-      background: rgba(0, 0, 0, 1);
+      background: ${props.$isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)'};
       border-radius: 50%;
     }
   `}
@@ -94,7 +94,7 @@ const ControlButton = styled.button<{ $hoverColor: string; $isDark: boolean; $sh
 
 const WindowContent = styled.div`
   height: calc(100% - 32px);
-  overflow: auto;
+  overflow: hidden;
 `
 
 // OS-level resize handles

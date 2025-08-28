@@ -9,11 +9,12 @@ import { Window } from './Window'
 import { getAppComponent, APP_REGISTRY } from '../apps/appRegistry'
 import { HEADER_HEIGHT } from '../constants/layout'
 import { MenuItem, DropdownItemData } from './menu'
+import { useSystemTheme } from '../hooks/useSystemTheme'
 
 const DesktopContainer = styled.div`
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+  background: linear-gradient(135deg,rgb(138, 146, 159) 0%,rgb(42, 43, 79) 50%,rgb(49, 71, 102) 100%);
   position: relative;
   overflow: hidden;
 `
@@ -24,9 +25,9 @@ const Header = styled.header`
   left: 0;
   right: 0;
   height: ${HEADER_HEIGHT}px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(99, 85, 106, 0.32);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0);
   display: flex;
   align-items: center;
   padding: 0 16px;
@@ -65,6 +66,7 @@ const WindowArea = styled.div`
 export const Desktop: React.FC = () => {
   const { windows, openWindow } = useWindowStore()
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const systemIsDark = useSystemTheme()
 
   const handleOpenApp = (appType: string, noteId?: string) => {
     console.log('handleOpenApp called with:', appType, noteId)
@@ -149,11 +151,16 @@ export const Desktop: React.FC = () => {
     },
     {
       id: 'chat',
-      label: 'Andrei Chat',
+      label: 'Clodius Chat',
       items: [
         {
-          id: 'coming-soon-chat',
-          label: 'Coming Soon...',
+          id: 'open-chat',
+          label: 'Chat with Andrei',
+          onClick: () => handleOpenApp('chat')
+        },
+        {
+          id: 'open-multi-chat',
+          label: 'Chat with Andrei\'s friends',
           onClick: () => {}
         }
       ] as DropdownItemData[]
@@ -189,8 +196,10 @@ export const Desktop: React.FC = () => {
         <AnimatePresence>
           {visibleWindows.map(window => {
             const appConfig = APP_REGISTRY[window.appType]
+            // Determine theme: force app theme or adapt to system theme
+            const isDark = appConfig?.forceTheme ? appConfig.isDark : systemIsDark
             return (
-              <Window key={window.id} window={window} isDark={appConfig?.isDark}>
+              <Window key={window.id} window={window} isDark={isDark}>
                 {getAppComponent(window.appType, window.id)}
               </Window>
             )

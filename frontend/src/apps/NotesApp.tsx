@@ -168,7 +168,7 @@ const NotesStatus = styled.div`
   font-size: 12px;
   color: #b0b0b0; /* Explicit muted light color for Safari compatibility */
   background: transparent;
-  border-top: 1px solid rgba(128, 128, 128, 0.2);
+  border-top: 0.5px solid rgba(128, 128, 128, 0.2);
   display: flex;
   justify-content: space-between;
   align-items: center;
