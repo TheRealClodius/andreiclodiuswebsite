@@ -34,8 +34,16 @@ const UserCountBadge = styled.div<{ $isDark: boolean }>`
   border-radius: 16px;
   font-size: 12px;
   font-weight: 500;
-  margin: 8px 16px;
   border: 1px solid ${props => props.$isDark ? 'rgba(99, 102, 241, 0.2)' : 'rgba(79, 70, 229, 0.2)'};
+  
+  /* Make it floating and sticky */
+  position: sticky;
+  top: 8px;
+  margin: 8px 16px 0 16px;
+  backdrop-filter: blur(12px);
+  z-index: 10;
+  width: fit-content;
+  align-self: flex-start;
 `
 
 export const MessageList: React.FC<MessageListProps> = ({ 
@@ -60,7 +68,10 @@ export const MessageList: React.FC<MessageListProps> = ({
   }, [messages])
 
   return (
-    <MessagesContainer ref={messagesContainerRef}>
+    <MessagesContainer 
+      ref={messagesContainerRef}
+      style={isGroupChat ? { paddingBottom: '70px' } : {}}
+    >
       {/* Show user count badge for group chat */}
       {isGroupChat && userCount !== undefined && userCount > 0 && (
         <UserCountBadge $isDark={window.matchMedia('(prefers-color-scheme: dark)').matches}>
