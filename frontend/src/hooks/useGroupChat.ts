@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from 'react'
+import { useCallback, useState, useRef, useEffect } from 'react'
 import { useWebSocket } from './useWebSocket'
 import { generateMessageId } from '../utils/chatUtils'
 
@@ -40,6 +40,7 @@ export const useGroupChat = ({ websocketUrl, onMessagesUpdate, onRoomStatusChang
   const [userCount, setUserCount] = useState(0)
   const [currentUser, setCurrentUser] = useState<{ id: string; nickname: string } | null>(null)
   const joiningNicknameRef = useRef<string | null>(null) // Store nickname being used to join
+  const lastJoinedNicknameRef = useRef<string | null>(null) // Store last successfully joined nickname for reconnection
   const [shouldFocusInput, setShouldFocusInput] = useState(false)
   
   // Handle WebSocket messages for group chat
@@ -71,6 +72,7 @@ export const useGroupChat = ({ websocketUrl, onMessagesUpdate, onRoomStatusChang
               
               if (myUser) {
                 setCurrentUser({ id: myUser.id, nickname: myUser.nickname })
+                lastJoinedNicknameRef.current = myUser.nickname // Store for reconnection
                 console.log('👤 Set current user (exact match):', myUser)
                 console.log('👤 currentUser should now be:', { id: myUser.id, nickname: myUser.nickname })
                 joiningNicknameRef.current = null // Clear joining state
@@ -82,6 +84,7 @@ export const useGroupChat = ({ websocketUrl, onMessagesUpdate, onRoomStatusChang
                 
                 if (similarUser) {
                   setCurrentUser({ id: similarUser.id, nickname: similarUser.nickname })
+                  lastJoinedNicknameRef.current = similarUser.nickname // Store for reconnection
                   console.log('👤 Set current user (similar match):', similarUser)
                   console.log('👤 currentUser should now be:', { id: similarUser.id, nickname: similarUser.nickname })
                   joiningNicknameRef.current = null // Clear joining state
@@ -189,7 +192,8 @@ export const useGroupChat = ({ websocketUrl, onMessagesUpdate, onRoomStatusChang
 
   const { connectionStatus, sendMessage, isConnected } = useWebSocket({
     url: websocketUrl,
-    onMessage: handleWebSocketMessage
+    onMessage: handleWebSocketMessage,
+    heartbeatInterval: 30000 // Send heartbeat every 30 seconds
   })
 
   const joinRoom = useCallback(async (nickname: string) => {
@@ -212,6 +216,27 @@ export const useGroupChat = ({ websocketUrl, onMessagesUpdate, onRoomStatusChang
       throw new Error('Failed to send join room request')
     }
   }, [sendMessage])
+
+  // Handle WebSocket reconnection - automatically rejoin room
+  const handleReconnection = useCallback(() => {
+    if (lastJoinedNicknameRef.current) {
+      console.log('🔄 WebSocket reconnected, rejoining room with nickname:', lastJoinedNicknameRef.current)
+      // Add a small delay to ensure connection is stable
+      setTimeout(() => {
+        if (lastJoinedNicknameRef.current) {
+          joinRoom(lastJoinedNicknameRef.current)
+        }
+      }, 1000)
+    }
+  }, [joinRoom])
+
+  // Monitor connection status and handle reconnections
+  useEffect(() => {
+    if (connectionStatus === 'connected' && lastJoinedNicknameRef.current && !currentUser) {
+      console.log('🔄 Connection restored, attempting to rejoin room')
+      handleReconnection()
+    }
+  }, [connectionStatus, currentUser, handleReconnection])
 
   const leaveRoom = useCallback(() => {
     if (!currentUser) return

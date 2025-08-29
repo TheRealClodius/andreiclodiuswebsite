@@ -249,6 +249,9 @@ async def group_chat_websocket(websocket: WebSocket):
                 await handle_leave_room(websocket, message)
             elif message_type == "send_message":
                 await handle_send_group_message(websocket, message)
+            elif message_type == "ping":
+                # Handle heartbeat ping - respond with pong
+                await websocket.send_text(json.dumps({"type": "pong"}))
             else:
                 logger.warning(f"Unknown group chat message type: {message_type}")
                 await websocket.send_text(json.dumps({
