@@ -115,6 +115,9 @@ export const Window: React.FC<WindowProps> = ({ window, children, isDark = false
     toggleMaximize 
   } = useWindowStore()
 
+  // Get resize constraints from window state
+  const resizeConstraints = window.constraints
+
   // Create OS-level drag handler that also manages interaction state
   const handleMouseDown = createDragHandler(
     window.id,
@@ -137,7 +140,8 @@ export const Window: React.FC<WindowProps> = ({ window, children, isDark = false
       setIsInteracting(true)
       updateWindowPosition(id, pos)
     },
-    () => setIsInteracting(false) // Reset interaction state when resize ends
+    () => setIsInteracting(false), // Reset interaction state when resize ends
+    resizeConstraints
   )
 
   const handleWindowClick = () => {

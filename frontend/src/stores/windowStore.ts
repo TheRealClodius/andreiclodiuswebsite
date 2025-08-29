@@ -18,6 +18,18 @@ export interface WindowState {
   isMaximized: boolean
   zIndex: number
   data?: any // App-specific data
+  constraints?: { // App-specific size constraints
+    minWidth?: number
+    minHeight?: number
+    maxWidth?: number
+    maxHeight?: number
+  }
+}
+
+export interface AppSizeConfig {
+  defaultSize?: { width: number; height: number }
+  minSize?: { width: number; height: number }
+  maxSize?: { width: number; height: number }
 }
 
 interface WindowStore {
@@ -25,7 +37,7 @@ interface WindowStore {
   nextZIndex: number
   
   // Window management
-  openWindow: (appType: string, title: string, initialData?: any) => string
+  openWindow: (appType: string, title: string, initialData?: any, sizeConfig?: AppSizeConfig) => string
   closeWindow: (id: string) => void
   focusWindow: (id: string) => void
   updateWindowPosition: (id: string, position: Partial<WindowPosition>) => void
@@ -48,17 +60,39 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
   windows: [],
   nextZIndex: 1000,
 
-  openWindow: (appType: string, title: string, initialData?: any) => {
+  openWindow: (appType: string, title: string, initialData?: any, sizeConfig?: AppSizeConfig) => {
     const id = `${appType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const existingWindows = get().windows.filter(w => !w.isMinimized)
+    
+    // Use provided size config or defaults
+    const defaultSize = sizeConfig?.defaultSize || DEFAULT_WINDOW_SIZE
+    
+    // Apply size constraints
+    let constrainedSize = { ...defaultSize }
+    if (sizeConfig?.minSize) {
+      constrainedSize.width = Math.max(constrainedSize.width, sizeConfig.minSize.width)
+      constrainedSize.height = Math.max(constrainedSize.height, sizeConfig.minSize.height)
+    }
+    if (sizeConfig?.maxSize) {
+      constrainedSize.width = Math.min(constrainedSize.width, sizeConfig.maxSize.width)
+      constrainedSize.height = Math.min(constrainedSize.height, sizeConfig.maxSize.height)
+    }
     
     // Calculate position with offset for multiple windows
     const offset = existingWindows.length * DEFAULT_WINDOW_OFFSET
     const position: WindowPosition = {
       x: 100 + offset,
       y: Math.max(HEADER_HEIGHT + 20, 100 + offset), // Always below header with 20px margin
-      ...DEFAULT_WINDOW_SIZE
+      ...constrainedSize
     }
+
+    // Store constraints for resize operations
+    const constraints = sizeConfig ? {
+      minWidth: sizeConfig.minSize?.width,
+      minHeight: sizeConfig.minSize?.height,
+      maxWidth: sizeConfig.maxSize?.width,
+      maxHeight: sizeConfig.maxSize?.height
+    } : undefined
 
     const newWindow: WindowState = {
       id,
@@ -68,7 +102,8 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       isMinimized: false,
       isMaximized: false,
       zIndex: get().nextZIndex,
-      data: initialData
+      data: initialData,
+      constraints
     }
 
     set(state => ({

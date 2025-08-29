@@ -89,3 +89,53 @@ class ChatResponse(BaseModel):
     """Response wrapper for chat API."""
     type: str
     data: Dict[str, Any]
+
+
+# Group Chat Models
+class GroupUser(BaseModel):
+    """User in a group chat room."""
+    id: str = Field(..., description="Unique user identifier")
+    nickname: str = Field(..., min_length=1, max_length=20, description="User's nickname")
+    joined_at: float = Field(..., description="Unix timestamp when user joined")
+
+
+class GroupChatMessage(BaseWebSocketMessage):
+    """Base model for group chat messages."""
+    type: str
+    room_id: str = Field(default="general", description="Chat room identifier")
+
+
+class JoinRoomMessage(GroupChatMessage):
+    """Message to join a group chat room."""
+    type: Literal["join_room"] = "join_room"
+    nickname: str = Field(..., min_length=1, max_length=20, description="User's desired nickname")
+
+
+class LeaveRoomMessage(GroupChatMessage):
+    """Message to leave a group chat room."""
+    type: Literal["leave_room"] = "leave_room"
+
+
+class SendGroupMessage(GroupChatMessage):
+    """Message to send to the group chat."""
+    type: Literal["send_message"] = "send_message"
+    message: str = Field(..., min_length=1, description="Message content")
+
+
+class GroupChatResponse(BaseWebSocketMessage):
+    """Response from group chat system."""
+    type: Literal[
+        "room_joined", 
+        "room_full", 
+        "user_joined", 
+        "user_left", 
+        "message", 
+        "user_list", 
+        "error"
+    ]
+    message: Optional[str] = None
+    sender: Optional[str] = None  # nickname of sender
+    userId: Optional[str] = None  # unique user identifier
+    users: Optional[List[GroupUser]] = None
+    userCount: Optional[int] = None
+    error: Optional[str] = None

@@ -57,7 +57,13 @@ export const createResizeHandler = (
   position: { x: number; y: number; width: number; height: number },
   isMaximized: boolean,
   onResize: (id: string, pos: { x: number; y: number; width: number; height: number }) => void,
-  onComplete?: () => void
+  onComplete?: () => void,
+  constraints?: {
+    minWidth?: number
+    minHeight?: number
+    maxWidth?: number
+    maxHeight?: number
+  }
 ) => {
   return (direction: string) => (event: React.MouseEvent) => {
     if (isMaximized) return
@@ -99,29 +105,35 @@ export const createResizeHandler = (
       let newX = startWindowX
       let newY = startWindowY
 
-      // OS-level resize constraints
-      const MIN_WIDTH = 300
-      const MIN_HEIGHT = 200
+      // OS-level resize constraints with app-specific overrides
+      const MIN_WIDTH = constraints?.minWidth || 300
+      const MIN_HEIGHT = constraints?.minHeight || 200
+      const MAX_WIDTH = constraints?.maxWidth || Number.MAX_SAFE_INTEGER
+      const MAX_HEIGHT = constraints?.maxHeight || Number.MAX_SAFE_INTEGER
 
       // Handle horizontal resizing
       if (direction.includes('e')) {
-        newWidth = Math.max(MIN_WIDTH, startWidth + deltaX)
+        newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + deltaX))
       } else if (direction.includes('w')) {
-        newWidth = Math.max(MIN_WIDTH, startWidth - deltaX)
+        newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth - deltaX))
         newX = startWindowX + deltaX
         if (newWidth === MIN_WIDTH) {
           newX = startWindowX + startWidth - MIN_WIDTH
+        } else if (newWidth === MAX_WIDTH) {
+          newX = startWindowX + startWidth - MAX_WIDTH
         }
       }
 
       // Handle vertical resizing
       if (direction.includes('s')) {
-        newHeight = Math.max(MIN_HEIGHT, startHeight + deltaY)
+        newHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, startHeight + deltaY))
       } else if (direction.includes('n')) {
-        newHeight = Math.max(MIN_HEIGHT, startHeight - deltaY)
+        newHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, startHeight - deltaY))
         newY = Math.max(HEADER_HEIGHT, startWindowY + deltaY)
         if (newHeight === MIN_HEIGHT || newY === HEADER_HEIGHT) {
           newY = Math.max(HEADER_HEIGHT, startWindowY + startHeight - MIN_HEIGHT)
+        } else if (newHeight === MAX_HEIGHT) {
+          newY = startWindowY + startHeight - MAX_HEIGHT
         }
       }
       

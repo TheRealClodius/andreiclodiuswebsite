@@ -21,6 +21,7 @@ interface ChatInputProps {
   onSendMessage: () => void
   shouldFocusInput: boolean
   setShouldFocusInput: (focus: boolean) => void
+  placeholder?: string
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -32,7 +33,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onRemoveFile,
   onSendMessage,
   shouldFocusInput,
-  setShouldFocusInput
+  setShouldFocusInput,
+  placeholder = "Go ahead..."
 }) => {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -86,7 +88,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           value={inputValue}
           onChange={onInputChange}
           onKeyDown={onKeyDown}
-          placeholder="Go ahead..."
+          placeholder={placeholder}
           rows={1}
         />
         <SendButton 

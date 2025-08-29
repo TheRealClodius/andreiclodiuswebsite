@@ -4,7 +4,7 @@ import { AnimatePresence } from 'framer-motion'
 import { HiPlus } from 'react-icons/hi'
 import { CustomLogo } from './icons/CustomLogo'
 
-import { useWindowStore } from '../stores/windowStore'
+import { useWindowStore, type AppSizeConfig } from '../stores/windowStore'
 import { Window } from './Window'
 import { getAppComponent, APP_REGISTRY } from '../apps/appRegistry'
 import { HEADER_HEIGHT } from '../constants/layout'
@@ -73,7 +73,12 @@ export const Desktop: React.FC = () => {
     const appConfig = APP_REGISTRY[appType]
     if (appConfig) {
       console.log('Opening window for app:', appType)
-      openWindow(appType, noteId ? `Note: ${noteId}` : appConfig.defaultTitle, { noteId })
+      const sizeConfig: AppSizeConfig = {
+        defaultSize: appConfig.defaultSize,
+        minSize: appConfig.minSize,
+        maxSize: appConfig.maxSize
+      }
+      openWindow(appType, noteId ? `Note: ${noteId}` : appConfig.defaultTitle, { noteId }, sizeConfig)
     } else {
       console.log('No app config found for:', appType)
     }
@@ -161,7 +166,7 @@ export const Desktop: React.FC = () => {
         {
           id: 'open-multi-chat',
           label: 'Chat with Andrei\'s friends',
-          onClick: () => {}
+          onClick: () => handleOpenApp('groupchat')
         }
       ] as DropdownItemData[]
     }
@@ -172,7 +177,7 @@ export const Desktop: React.FC = () => {
       <Header>
         <LeftSection>
           <LogoIcon>
-            <CustomLogo size={20} />
+            <CustomLogo size={16} />
           </LogoIcon>
           
           <MenuBar>

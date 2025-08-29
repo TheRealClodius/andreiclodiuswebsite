@@ -9,4 +9,6 @@ export { useFileUpload } from './useFileUpload'
 export type { FileAttachment } from './useFileUpload'
 
 export { useChat } from './useChat'
+export { useGroupChat } from './useGroupChat'
+export type { GroupMessage, GroupUser } from './useGroupChat'
 export { useSystemTheme } from './useSystemTheme'

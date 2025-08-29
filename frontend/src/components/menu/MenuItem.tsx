@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import styled from 'styled-components'
 import { AnimatePresence } from 'framer-motion'
 import { MenuButton } from './MenuButton'

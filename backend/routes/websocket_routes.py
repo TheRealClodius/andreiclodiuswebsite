@@ -9,10 +9,15 @@ from models.websocket import (
     ChatMessage, 
     PingMessage, 
     BroadcastMessage,
-    WebSocketMessage
+    WebSocketMessage,
+    JoinRoomMessage,
+    LeaveRoomMessage,
+    SendGroupMessage,
+    GroupChatResponse
 )
 from services.websocket_service import WebSocketService
 from services.chat_service import ChatService
+from services.group_chat_service import GroupChatService
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +28,7 @@ websocket_router = APIRouter(tags=["websocket"])
 websocket_service = WebSocketService()
 chat_service: ChatService = None
 chat_service_initialized = False
+group_chat_service = GroupChatService()
 
 
 def get_websocket_service() -> WebSocketService:
@@ -211,3 +217,145 @@ async def chat_websocket(websocket: WebSocket):
     except Exception as e:
         logger.error(f"Chat WebSocket error: {str(e)}")
         ws_service.disconnect(websocket)
+
+
+@websocket_router.websocket("/ws/group-chat")
+async def group_chat_websocket(websocket: WebSocket):
+    """
+    WebSocket endpoint for group chat functionality.
+    
+    Handles group chat message types:
+    - join_room: Join a chat room with a nickname
+    - leave_room: Leave the current chat room
+    - send_message: Send a message to all users in the room
+    """
+    ws_service = get_websocket_service()
+    await ws_service.connect(websocket)
+    
+    try:
+        while True:
+            # Receive and parse message
+            data = await websocket.receive_text()
+            message = json.loads(data)
+            
+            # Get message type
+            message_type = message.get("type", "unknown")
+            logger.info(f"Received Group Chat message: {message_type}")
+            
+            # Route message based on type
+            if message_type == "join_room":
+                await handle_join_room(websocket, message)
+            elif message_type == "leave_room":
+                await handle_leave_room(websocket, message)
+            elif message_type == "send_message":
+                await handle_send_group_message(websocket, message)
+            else:
+                logger.warning(f"Unknown group chat message type: {message_type}")
+                await websocket.send_text(json.dumps({
+                    "type": "group_chat_error",
+                    "error": f"Unknown message type: {message_type}"
+                }))
+                
+    except WebSocketDisconnect:
+        # Handle user leaving when they disconnect
+        await group_chat_service.handle_disconnect(websocket)
+        ws_service.disconnect(websocket)
+    except Exception as e:
+        logger.error(f"Group Chat WebSocket error: {str(e)}")
+        await group_chat_service.handle_disconnect(websocket)
+        ws_service.disconnect(websocket)
+
+
+async def handle_join_room(websocket: WebSocket, message: dict):
+    """
+    Handle user joining a chat room.
+    
+    Args:
+        websocket: WebSocket connection
+        message: Join room message data
+    """
+    try:
+        # Validate join room message
+        join_msg = JoinRoomMessage(**message)
+        
+        # Attempt to join the room
+        response = await group_chat_service.join_room(
+            join_msg.nickname,
+            websocket,
+            join_msg.room_id
+        )
+        
+        # Send response back to client
+        await websocket.send_text(json.dumps({
+            "type": "group_chat_response",
+            "data": response.dict()
+        }))
+        
+        logger.info(f"User '{join_msg.nickname}' join attempt: {response.type}")
+        
+    except Exception as e:
+        logger.error(f"Error handling join room: {str(e)}")
+        await websocket.send_text(json.dumps({
+            "type": "group_chat_error",
+            "error": str(e)
+        }))
+
+
+async def handle_leave_room(websocket: WebSocket, message: dict):
+    """
+    Handle user leaving a chat room.
+    
+    Args:
+        websocket: WebSocket connection
+        message: Leave room message data
+    """
+    try:
+        # Validate leave room message
+        leave_msg = LeaveRoomMessage(**message)
+        
+        # Leave the room
+        response = await group_chat_service.leave_room(websocket, leave_msg.room_id)
+        
+        if response:
+            # Send confirmation to client
+            await websocket.send_text(json.dumps({
+                "type": "group_chat_response",
+                "data": response.dict()
+            }))
+            logger.info(f"User left room successfully")
+        
+    except Exception as e:
+        logger.error(f"Error handling leave room: {str(e)}")
+        await websocket.send_text(json.dumps({
+            "type": "group_chat_error",
+            "error": str(e)
+        }))
+
+
+async def handle_send_group_message(websocket: WebSocket, message: dict):
+    """
+    Handle sending a message to the group chat.
+    
+    Args:
+        websocket: WebSocket connection
+        message: Group message data
+    """
+    try:
+        # Validate group message
+        group_msg = SendGroupMessage(**message)
+        
+        # Send message to the room
+        response = await group_chat_service.send_message(
+            group_msg.message,
+            websocket,
+            group_msg.room_id
+        )
+        
+        logger.info(f"Group message sent: {response.type}")
+        
+    except Exception as e:
+        logger.error(f"Error handling group message: {str(e)}")
+        await websocket.send_text(json.dumps({
+            "type": "group_chat_error",
+            "error": str(e)
+        }))

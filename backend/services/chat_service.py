@@ -186,7 +186,7 @@ class ChatService:
         
         return "I'm sorry, I couldn't process your request."
     
-    async def _handle_image_generation_tool(self, args, message_id: str) -> AsyncGenerator[Dict[str, Any], None]:
+    async def _handle_image_generation_tool(self, args, message_id: str, user_attachments: List[MessageAttachment] = None) -> AsyncGenerator[Dict[str, Any], None]:
         """Handle the image generation tool call and stream responses."""
         logger.info(f"Handling image generation tool with args: {args}")
         
@@ -201,10 +201,24 @@ class ChatService:
             "timestamp": asyncio.get_event_loop().time()
         }
         
-        # Prepare reference images
+        # Prepare reference images - prioritize user uploads over previous generations
         reference_images = []
         
-        if use_previous and self.last_generated_image:
+        # First priority: Use user-uploaded images if available
+        if user_attachments:
+            for attachment in user_attachments:
+                if attachment.mime_type.startswith('image/'):
+                    logger.info(f"Using user-uploaded image as reference: {attachment.name}")
+                    reference_images.append(attachment)
+            
+            # Clear previous generation context when user uploads new images
+            if reference_images:
+                logger.info("Clearing previous generation context - user uploaded new images")
+                self.last_generated_image = None
+                self.last_generation_prompt = None
+        
+        # Second priority: Use previously generated image if no user uploads and use_previous is True
+        elif use_previous and self.last_generated_image:
             logger.info("Using previous generated image as reference via tool")
             previous_image_attachment = MessageAttachment(
                 name="previous-generated-image.png",
@@ -213,6 +227,11 @@ class ChatService:
                 size=0
             )
             reference_images = [previous_image_attachment]
+            
+        if reference_images:
+            logger.info(f"Total reference images prepared: {len(reference_images)}")
+        else:
+            logger.info("No reference images - generating from scratch")
         
         # Generate image
         generated_image, text_response = await self.generate_image(prompt, reference_images)
@@ -274,8 +293,8 @@ class ChatService:
             # Check if AI decided to use image generation tool
             if isinstance(ai_response, dict) and ai_response.get("type") == "function_call":
                 if ai_response.get("function") == "generate_image":
-                    # Handle image generation via tool
-                    async for chunk in self._handle_image_generation_tool(ai_response["args"], message_id):
+                    # Handle image generation via tool, passing user attachments
+                    async for chunk in self._handle_image_generation_tool(ai_response["args"], message_id, attachments):
                         yield chunk
                     
                     # Send completion signal
