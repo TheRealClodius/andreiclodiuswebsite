@@ -197,7 +197,7 @@ export const Window: React.FC<WindowProps> = ({ window, children, isDark = false
         <div style={{ width: '32px' }} /> {/* Spacer for center alignment */}
       </WindowHeader>
       
-      <WindowContent>
+      <WindowContent data-window-content>
         {children}
       </WindowContent>
       

@@ -344,20 +344,31 @@ async def handle_send_group_message(websocket: WebSocket, message: dict):
         message: Group message data
     """
     try:
+        logger.info(f"📨 Received group message payload: {message}")
+        
+        # Ensure backward compatibility - add missing fields with defaults
+        if 'room_id' not in message:
+            message['room_id'] = 'general'
+        if 'replyTo' not in message:
+            message['replyTo'] = None
+            
         # Validate group message
         group_msg = SendGroupMessage(**message)
+        logger.info(f"✅ Message validation successful")
         
         # Send message to the room
         response = await group_chat_service.send_message(
             group_msg.message,
             websocket,
-            group_msg.room_id
+            group_msg.room_id,
+            group_msg.replyTo
         )
         
         logger.info(f"Group message sent: {response.type}")
         
     except Exception as e:
-        logger.error(f"Error handling group message: {str(e)}")
+        logger.error(f"❌ Error handling group message: {str(e)}")
+        logger.error(f"❌ Message payload was: {message}")
         await websocket.send_text(json.dumps({
             "type": "group_chat_error",
             "error": str(e)

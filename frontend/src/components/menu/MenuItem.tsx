@@ -13,6 +13,7 @@ interface MenuItemProps {
   onClose: () => void
   onHover?: () => void
   hasOpenSibling?: boolean
+  textColor?: string
 }
 
 const MenuItemContainer = styled.div`
@@ -28,7 +29,8 @@ export const MenuItem: React.FC<MenuItemProps> = ({
   onToggle, 
   onClose,
   onHover,
-  hasOpenSibling
+  hasOpenSibling,
+  textColor
 }) => {
   const handleButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -47,6 +49,7 @@ export const MenuItem: React.FC<MenuItemProps> = ({
         label={label}
         isOpen={isOpen}
         onClick={handleButtonClick}
+        textColor={textColor}
       />
       
       <AnimatePresence>

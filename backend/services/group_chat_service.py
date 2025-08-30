@@ -64,6 +64,9 @@ class ChatRoom:
         self.connections[user_id] = websocket
         self.nickname_to_user_id[nickname] = user_id
         
+        logger.debug(f"👤 Added user {nickname} (ID: {user_id}) with websocket {id(websocket)} to room {self.room_id}")
+        logger.debug(f"👥 Room {self.room_id} now has users: {[f'{uid}: {u.nickname}' for uid, u in self.users.items()]}")
+        
         logger.info(f"User '{nickname}' (ID: {user_id}) joined room '{self.room_id}'. Total users: {len(self.users)}")
         return user
         
@@ -96,9 +99,17 @@ class ChatRoom:
         
     def get_user_by_websocket(self, websocket: WebSocket) -> Optional[GroupUser]:
         """Get user by their WebSocket connection."""
+        logger.debug(f"🔍 Looking for websocket {id(websocket)} in room {self.room_id}")
+        logger.debug(f"🔍 Available connections: {[(user_id, id(conn)) for user_id, conn in self.connections.items()]}")
+        logger.debug(f"🔍 Available users: {[f'{user_id}: {user.nickname}' for user_id, user in self.users.items()]}")
+        
         for user_id, conn in self.connections.items():
             if conn == websocket:
-                return self.users.get(user_id)
+                user = self.users.get(user_id)
+                logger.debug(f"✅ Found user {user.nickname} (ID: {user_id}) for websocket {id(websocket)}")
+                return user
+        
+        logger.debug(f"❌ No user found for websocket {id(websocket)}")
         return None
         
     def get_users_list(self) -> List[GroupUser]:
@@ -213,7 +224,7 @@ class GroupChatService:
             sender=user.nickname
         )
         
-    async def send_message(self, message: str, websocket: WebSocket, room_id: str = None) -> GroupChatResponse:
+    async def send_message(self, message: str, websocket: WebSocket, room_id: str = None, reply_to = None) -> GroupChatResponse:
         """
         Handle sending a message to the room.
         
@@ -221,6 +232,7 @@ class GroupChatService:
             message: Message content
             websocket: Sender's WebSocket connection
             room_id: Room ID (defaults to general)
+            reply_to: Optional reply data for the message being replied to
             
         Returns:
             GroupChatResponse with message result
@@ -228,10 +240,12 @@ class GroupChatService:
         room = self.get_or_create_room(room_id)
         user = room.get_user_by_websocket(websocket)
         
+        # If user not found in room, they need to join first
         if not user:
+            logger.warning(f"User not found in room {room_id}. User needs to join the room first.")
             return GroupChatResponse(
                 type="error",
-                error="User not found in room"
+                error="You must join the room before sending messages"
             )
             
         # Broadcast message to all users in the room
@@ -239,7 +253,8 @@ class GroupChatService:
             type="message",
             message=message,
             sender=user.nickname,
-            userId=user.id
+            userId=user.id,
+            replyTo=reply_to
         )
         
         await self._broadcast_to_room(room, response, exclude=None)  # Include sender in broadcast

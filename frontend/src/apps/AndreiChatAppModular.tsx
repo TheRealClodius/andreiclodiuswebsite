@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react'
+import { HiClipboard, HiRefresh } from 'react-icons/hi'
 import { useWindowStore } from '../stores/windowStore'
 import { useChat } from '../hooks'
-import { MessageList, ChatInput } from '../components/chat'
+import { MessageList, ChatInput, type MessageAction } from '../components/chat'
 import { ChatContainer } from '../styles/chat'
+import { Message } from '../hooks/useChatMessages'
+import { GroupMessage } from '../hooks/useGroupChat'
 
 interface AndreiChatAppProps {
   windowId: string
@@ -64,12 +67,50 @@ export const AndreiChatApp: React.FC<AndreiChatAppProps> = ({ windowId }) => {
     await handleSendMessage(content)
   }
 
+  // Andrei chat specific message actions
+  const getAndreiChatActions = (message: Message | GroupMessage): MessageAction[] => {
+    const actions: MessageAction[] = []
+    
+    // Copy action (for all messages)
+    actions.push({
+      id: 'copy',
+      label: 'Copy',
+      icon: HiClipboard,
+      onClick: () => {
+        if (message.content) {
+          navigator.clipboard.writeText(message.content).then(() => {
+            console.log('Message copied to clipboard')
+          }).catch(err => {
+            console.error('Failed to copy message:', err)
+          })
+        }
+      }
+    })
+    
+    // Regenerate action (only for AI responses in regular chat)
+    if (message.type === 'assistant' || message.type === 'ai') {
+      actions.push({
+        id: 'regenerate',
+        label: 'Regenerate',
+        icon: HiRefresh,
+        onClick: () => {
+          console.log('Regenerating AI response...')
+          // TODO: Implement regeneration logic
+          // This would typically resend the previous user message
+        }
+      })
+    }
+    
+    return actions
+  }
+
   return (
     <ChatContainer>
       <MessageList
         messages={messages}
         isAiTyping={isAiTyping}
         connectionStatus={connectionStatus}
+        getMessageActions={getAndreiChatActions}
       />
       
       <ChatInput

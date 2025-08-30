@@ -23,7 +23,11 @@ const StyledDropdownItem = styled(motion.div)<{ $hasSubmenu?: boolean }>`
   border: none;
   padding: 4px 6px;
   text-align: left;
-  color: #333;
+  color: ${() => 
+    window.matchMedia('(prefers-color-scheme: dark)').matches 
+      ? '#e0e0e0' // Light text in dark mode
+      : '#333' // Dark text in light mode
+  };
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -33,7 +37,11 @@ const StyledDropdownItem = styled(motion.div)<{ $hasSubmenu?: boolean }>`
   transition: background-color 0.15s ease;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: ${() => 
+      window.matchMedia('(prefers-color-scheme: dark)').matches 
+        ? 'rgba(255, 255, 255, 0.1)' // Light hover background in dark mode
+        : 'rgba(0, 0, 0, 0.1)' // Dark hover background in light mode
+    };
   }
 `
 
@@ -47,7 +55,11 @@ const ItemContent = styled.div`
 const IconWrapper = styled.span`
   display: flex;
   align-items: center;
-  color: #666;
+  color: ${() => 
+    window.matchMedia('(prefers-color-scheme: dark)').matches 
+      ? '#b0b0b0' // Light icon color in dark mode
+      : '#666' // Dark icon color in light mode
+  };
 `
 
 const SubmenuIndicator = styled.span`

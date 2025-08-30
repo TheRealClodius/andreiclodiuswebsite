@@ -12,6 +12,7 @@ export interface Message {
     size: number
     url?: string
   }>
+  replyTo?: Message // Message being replied to
 }
 
 export interface ChatResponse {

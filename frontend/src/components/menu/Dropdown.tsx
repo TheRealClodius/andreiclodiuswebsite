@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DropdownItem, DropdownItemData } from './DropdownItem'
@@ -6,17 +6,41 @@ import { DropdownItem, DropdownItemData } from './DropdownItem'
 interface DropdownProps {
   items: DropdownItemData[]
   onClose?: () => void
+  enableSmartPositioning?: boolean
 }
 
-const DropdownContainer = styled(motion.div)`
+interface DropdownPosition {
+  top?: number
+  bottom?: number
+  left?: number
+  right?: number
+  transformOrigin: string
+}
+
+const DropdownContainer = styled(motion.div)<{ $position: DropdownPosition }>`
   position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  background: rgba(255, 255, 255, 0.95);
+  ${props => props.$position.top !== undefined ? `top: ${props.$position.top}px;` : ''}
+  ${props => props.$position.bottom !== undefined ? `bottom: ${props.$position.bottom}px;` : ''}
+  ${props => props.$position.left !== undefined ? `left: ${props.$position.left}px;` : ''}
+  ${props => props.$position.right !== undefined ? `right: ${props.$position.right}px;` : ''}
+  transform-origin: ${props => props.$position.transformOrigin};
+  background: ${() => 
+    window.matchMedia('(prefers-color-scheme: dark)').matches 
+      ? 'rgba(42, 42, 42, 0.95)' // Dark background in dark mode
+      : 'rgba(255, 255, 255, 0.95)' // Light background in light mode
+  };
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid ${() => 
+    window.matchMedia('(prefers-color-scheme: dark)').matches 
+      ? 'rgba(255, 255, 255, 0.1)' // Light border in dark mode
+      : 'rgba(0, 0, 0, 0.1)' // Dark border in light mode
+  };
   border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px ${() => 
+    window.matchMedia('(prefers-color-scheme: dark)').matches 
+      ? 'rgba(0, 0, 0, 0.5)' // Stronger shadow in dark mode
+      : 'rgba(0, 0, 0, 0.3)' // Normal shadow in light mode
+  };
   min-width: 180px;
   z-index: 11000;
   overflow: visible;
@@ -27,21 +51,33 @@ const Submenu = styled(motion.div)`
   position: absolute;
   top: -5px;
   left: 100%;
-  background: rgba(255, 255, 255, 0.99);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: ${() => 
+    window.matchMedia('(prefers-color-scheme: dark)').matches 
+      ? 'rgba(42, 42, 42, 0.99)' // Dark background in dark mode
+      : 'rgba(255, 255, 255, 0.99)' // Light background in light mode
+  };
+  border: 1px solid ${() => 
+    window.matchMedia('(prefers-color-scheme: dark)').matches 
+      ? 'rgba(255, 255, 255, 0.1)' // Light border in dark mode
+      : 'rgba(0, 0, 0, 0.1)' // Dark border in light mode
+  };
   border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px ${() => 
+    window.matchMedia('(prefers-color-scheme: dark)').matches 
+      ? 'rgba(0, 0, 0, 0.5)' // Stronger shadow in dark mode
+      : 'rgba(0, 0, 0, 0.3)' // Normal shadow in light mode
+  };
   min-width: 160px;
   z-index: 11001;
   overflow: hidden;
   padding: 4px 4px 4px 4px;
 `
 
-const dropdownVariants = {
+const createDropdownVariants = (transformOrigin: string) => ({
   initial: { 
     opacity: 0, 
-    y: -2, 
-    transformOrigin: "top left"
+    y: transformOrigin.includes('bottom') ? 2 : -2, 
+    scale: 0.95
   },
   animate: { 
     opacity: 1, 
@@ -59,7 +95,8 @@ const dropdownVariants = {
   },
   exit: { 
     opacity: 0, 
-    y: -2, 
+    y: transformOrigin.includes('bottom') ? 2 : -2,
+    scale: 0.95,
     transition: {
       duration: 0.12,
       ease: [0.4, 0, 1, 1],
@@ -67,7 +104,7 @@ const dropdownVariants = {
       staggerDirection: -1
     }
   }
-}
+})
 
 const dropdownItemVariants = {
   initial: { 
@@ -153,8 +190,76 @@ const submenuItemVariants = {
   }
 }
 
-export const Dropdown: React.FC<DropdownProps> = ({ items, onClose }) => {
+export const Dropdown: React.FC<DropdownProps> = ({ items, onClose, enableSmartPositioning = false }) => {
   const [hoveredSubmenu, setHoveredSubmenu] = useState<string | null>(null)
+  const [position, setPosition] = useState<DropdownPosition>({
+    top: 33,
+    left: 0,
+    transformOrigin: 'top left'
+  })
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Smart positioning logic (only when enabled)
+  useEffect(() => {
+    if (!enableSmartPositioning) return
+    if (!dropdownRef.current) return
+
+    const calculateOptimalPosition = (): DropdownPosition => {
+      const dropdown = dropdownRef.current!
+      const parent = dropdown.offsetParent as HTMLElement
+      
+      if (!parent) return position
+
+      // Get container bounds (window or closest scrollable parent)
+      const container = parent.closest('[data-window-content]') || document.documentElement
+      const containerRect = container.getBoundingClientRect()
+      const parentRect = parent.getBoundingClientRect()
+      
+      // Dropdown dimensions (approximate)
+      const dropdownWidth = 180
+      const dropdownHeight = items.length * 40 + 8 // Approximate item height + padding
+      
+      // Available space in each direction
+      const spaceBelow = containerRect.bottom - parentRect.bottom
+      const spaceAbove = parentRect.top - containerRect.top
+      const spaceRight = containerRect.right - parentRect.left
+      const spaceLeft = parentRect.right - containerRect.left
+      
+      // Determine vertical placement
+      const shouldPlaceAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow
+      
+      // Determine horizontal placement
+      const shouldPlaceLeft = spaceRight < dropdownWidth && spaceLeft > spaceRight
+      
+      // Calculate position
+      const newPosition: DropdownPosition = {
+        transformOrigin: ''
+      }
+      
+      if (shouldPlaceAbove) {
+        newPosition.bottom = 26
+        newPosition.transformOrigin += 'bottom'
+      } else {
+        newPosition.top = 26
+        newPosition.transformOrigin += 'top'
+      }
+      
+      if (shouldPlaceLeft) {
+        newPosition.right = 0
+        newPosition.transformOrigin += ' right'
+      } else {
+        newPosition.left = 0
+        newPosition.transformOrigin += ' left'
+      }
+      
+      return newPosition
+    }
+
+    const newPosition = calculateOptimalPosition()
+    setPosition(newPosition)
+  }, [items.length, enableSmartPositioning])
+
+  const dropdownVariants = createDropdownVariants(position.transformOrigin)
 
   const handleItemClick = (item: DropdownItemData) => {
     if (!item.submenu && item.onClick) {
@@ -184,6 +289,8 @@ export const Dropdown: React.FC<DropdownProps> = ({ items, onClose }) => {
 
   return (
     <DropdownContainer
+      ref={dropdownRef}
+      $position={position}
       variants={dropdownVariants}
       initial="initial"
       animate="animate"

@@ -116,10 +116,19 @@ class LeaveRoomMessage(GroupChatMessage):
     type: Literal["leave_room"] = "leave_room"
 
 
+class ReplyToData(BaseModel):
+    """Data about the message being replied to."""
+    id: str = Field(..., description="ID of the message being replied to")
+    content: str = Field(..., description="Content of the message being replied to")
+    sender: str = Field(..., description="Sender of the message being replied to")
+    type: str = Field(..., description="Type of the message being replied to")
+
+
 class SendGroupMessage(GroupChatMessage):
     """Message to send to the group chat."""
     type: Literal["send_message"] = "send_message"
     message: str = Field(..., min_length=1, description="Message content")
+    replyTo: Optional[ReplyToData] = Field(None, description="Message being replied to")
 
 
 class GroupChatResponse(BaseWebSocketMessage):
@@ -139,3 +148,4 @@ class GroupChatResponse(BaseWebSocketMessage):
     users: Optional[List[GroupUser]] = None
     userCount: Optional[int] = None
     error: Optional[str] = None
+    replyTo: Optional[ReplyToData] = None  # Reply data

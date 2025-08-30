@@ -5,12 +5,13 @@ interface MenuButtonProps {
   label: string
   isOpen: boolean
   onClick: (e: React.MouseEvent) => void
+  textColor?: string
 }
 
-const StyledMenuButton = styled.button<{ $isOpen: boolean }>`
+const StyledMenuButton = styled.button<{ $isOpen: boolean; $textColor: string }>`
   background: ${props => props.$isOpen ? 'rgba(255, 255, 255, 0.15)' : 'transparent'};
   border: none;
-  color: white;
+  color: ${props => props.$textColor};
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -18,8 +19,9 @@ const StyledMenuButton = styled.button<{ $isOpen: boolean }>`
   gap: 4px;
   padding: 6px 12px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 550;
   border-radius: 6px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   
   &:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -33,10 +35,11 @@ const StyledMenuButton = styled.button<{ $isOpen: boolean }>`
   `}
 `
 
-export const MenuButton: React.FC<MenuButtonProps> = ({ label, isOpen, onClick }) => {
+export const MenuButton: React.FC<MenuButtonProps> = ({ label, isOpen, onClick, textColor = 'white' }) => {
   return (
     <StyledMenuButton 
       $isOpen={isOpen} 
+      $textColor={textColor}
       onClick={onClick}
     >
       {label}

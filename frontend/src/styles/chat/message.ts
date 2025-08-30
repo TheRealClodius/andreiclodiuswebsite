@@ -5,8 +5,8 @@ import { pulseAnimation } from './animations'
 export const MessageBubble = styled(motion.div)<{ $isHuman: boolean }>`
   max-width: ${props => props.$isHuman ? '70%' : '85%'};
   align-self: ${props => props.$isHuman ? 'flex-end' : 'flex-start'};
-  padding: 8px 10px;
-  border-radius: 24px;
+  padding: 8px 14px;
+  border-radius: 20px;
   font-size: 14px;
   line-height: 1.5;
   word-wrap: break-word;
@@ -204,16 +204,23 @@ export const MessageBubble = styled(motion.div)<{ $isHuman: boolean }>`
   `}
 `
 
-export const MessageHeader = styled.div<{ $isHuman: boolean }>`
+export const MessageHeader = styled.div<{ $isHuman: boolean; $userColor?: string }>`
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 600; // Make names bold
   margin-bottom: 4px;
-  opacity: 0.8;
-  color: ${props => props.$isHuman ? 'rgba(190, 202, 255, 0.9)' : (
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? '#b0b0b0'      // Muted light text in dark mode
-      : '#666'         // Muted dark text in light mode
-  )};
+  opacity: 0.9; // Slightly more opacity for better visibility of bold text
+  color: ${props => {
+    if (props.$userColor) {
+      // Use custom user color for group chat
+      return props.$userColor;
+    }
+    // Default colors for non-group chat
+    return props.$isHuman ? 'rgba(190, 202, 255, 0.9)' : (
+      window.matchMedia('(prefers-color-scheme: dark)').matches 
+        ? '#b0b0b0'      // Muted light text in dark mode
+        : '#666'         // Muted dark text in light mode
+    );
+  }};
 `
 
 export const MessageTime = styled.div`

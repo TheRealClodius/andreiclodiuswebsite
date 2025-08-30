@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react'
+import { HiClipboard, HiReply } from 'react-icons/hi'
 import { useWindowStore } from '../stores/windowStore'
-import { MessageList, ChatInput, NicknameSetup } from '../components/chat'
+import { MessageList, ChatInput, NicknameSetup, type MessageAction } from '../components/chat'
 import { ChatContainer } from '../styles/chat'
 import { useGroupChat, type GroupMessage } from '../hooks'
+import { Message } from '../hooks/useChatMessages'
 
 interface ChatWithFriendsAppProps {
   windowId: string
 }
+
+
 
 export const ChatWithFriendsApp: React.FC<ChatWithFriendsAppProps> = ({ windowId }) => {
   const { getWindow, updateWindowData } = useWindowStore()
@@ -16,6 +20,7 @@ export const ChatWithFriendsApp: React.FC<ChatWithFriendsAppProps> = ({ windowId
   const [nickname, setNickname] = useState('')
   const [hasJoinedRoom, setHasJoinedRoom] = useState(false)
   const [roomStatus, setRoomStatus] = useState<'idle' | 'joining' | 'full' | 'joined'>('idle')
+  const [replyToMessage, setReplyToMessage] = useState<Message | GroupMessage | null>(null)
 
   // Initialize group chat with WebSocket connection
   const {
@@ -26,7 +31,6 @@ export const ChatWithFriendsApp: React.FC<ChatWithFriendsAppProps> = ({ windowId
     users,
     currentUser,
     joinRoom,
-    leaveRoom,
     sendGroupMessage,
     shouldFocusInput,
     setShouldFocusInput,
@@ -89,11 +93,55 @@ export const ChatWithFriendsApp: React.FC<ChatWithFriendsAppProps> = ({ windowId
     const content = inputValue.trim()
     if (!content || !hasJoinedRoom) return
 
-    // Clear input immediately
+    // Clear input and reply state immediately
     setInputValue('')
+    const currentReply = replyToMessage
+    setReplyToMessage(null)
     
-    // Send message to group
-    await sendGroupMessage(content)
+    // Send message to group with reply context if replying
+    await sendGroupMessage(content, currentReply || undefined)
+  }
+
+  const handleReplyToMessage = (message: Message | GroupMessage) => {
+    setReplyToMessage(message)
+    setShouldFocusInput(true)
+  }
+
+  const handleCancelReply = () => {
+    setReplyToMessage(null)
+  }
+
+  // Group chat specific message actions
+  const getGroupChatActions = (message: Message | GroupMessage): MessageAction[] => {
+    const actions: MessageAction[] = []
+    
+    // Copy action
+    actions.push({
+      id: 'copy',
+      label: 'Copy',
+      icon: HiClipboard,
+      onClick: () => {
+        if (message.content) {
+          navigator.clipboard.writeText(message.content).then(() => {
+            console.log('Message copied to clipboard')
+          }).catch(err => {
+            console.error('Failed to copy message:', err)
+          })
+        }
+      }
+    })
+    
+    // Reply action (only for non-system messages)
+    if (message.type !== 'system') {
+      actions.push({
+        id: 'reply',
+        label: 'Reply',
+        icon: HiReply,
+        onClick: () => handleReplyToMessage(message)
+      })
+    }
+    
+    return actions
   }
 
   // Show nickname setup if user hasn't joined room yet
@@ -119,6 +167,8 @@ export const ChatWithFriendsApp: React.FC<ChatWithFriendsAppProps> = ({ windowId
         userCount={userCount}
         users={users}
         currentUser={currentUser}
+        onReplyToMessage={handleReplyToMessage}
+        getMessageActions={getGroupChatActions}
       />
       
       <ChatInput
@@ -132,6 +182,8 @@ export const ChatWithFriendsApp: React.FC<ChatWithFriendsAppProps> = ({ windowId
         shouldFocusInput={shouldFocusInput}
         setShouldFocusInput={setShouldFocusInput}
         placeholder={`Message as ${nickname}...`}
+        replyToMessage={replyToMessage}
+        onCancelReply={handleCancelReply}
       />
     </ChatContainer>
   )

@@ -9,6 +9,9 @@ import {
   PlusButton 
 } from '../../styles/chat'
 import { FileChips } from './FileUpload'
+import { ReplyChip } from './index'
+import { Message } from '../../hooks/useChatMessages'
+import { GroupMessage } from '../../hooks/useGroupChat'
 import { adjustTextareaHeight } from '../../utils/chatUtils'
 
 interface ChatInputProps {
@@ -22,6 +25,8 @@ interface ChatInputProps {
   shouldFocusInput: boolean
   setShouldFocusInput: (focus: boolean) => void
   placeholder?: string
+  replyToMessage?: Message | GroupMessage | null
+  onCancelReply?: () => void
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -34,7 +39,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   shouldFocusInput,
   setShouldFocusInput,
-  placeholder = "Go ahead..."
+  placeholder = "Go ahead...",
+  replyToMessage,
+  onCancelReply
 }) => {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -66,6 +73,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <InputContainer>
+      {replyToMessage && onCancelReply && (
+        <ReplyChip 
+          message={replyToMessage}
+          onRemove={onCancelReply}
+        />
+      )}
+      
       <FileChips
         selectedFiles={selectedFiles}
         onRemoveFile={onRemoveFile}

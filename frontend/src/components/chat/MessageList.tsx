@@ -9,7 +9,7 @@ import {
   EmptyStateSubtitle,
   StatusIndicator 
 } from '../../styles/chat'
-import { MessageBubble } from './MessageBubble'
+import { MessageBubble, type MessageAction } from './index'
 import { Message } from '../../hooks/useChatMessages'
 import { GroupMessage, GroupUser } from '../../hooks/useGroupChat'
 import { ConnectionStatus } from '../../hooks/useWebSocket'
@@ -22,6 +22,8 @@ interface MessageListProps {
   userCount?: number // For group chat
   users?: GroupUser[] // For group chat
   currentUser?: { id: string; nickname: string } | null // For group chat
+  onReplyToMessage?: (message: Message | GroupMessage) => void // For reply functionality
+  getMessageActions?: (message: Message | GroupMessage) => MessageAction[] // App-specific actions
 }
 
 const UserCountBadge = styled.div<{ $isDark: boolean }>`
@@ -38,8 +40,8 @@ const UserCountBadge = styled.div<{ $isDark: boolean }>`
   
   /* Make it floating and sticky */
   position: sticky;
-  top: 8px;
-  margin: 8px 16px 0 16px;
+  top: 0px;
+  margin: 8px 16px 0 0px;
   backdrop-filter: blur(12px);
   z-index: 10;
   width: fit-content;
@@ -52,7 +54,9 @@ export const MessageList: React.FC<MessageListProps> = ({
   connectionStatus,
   userCount,
   users,
-  currentUser
+  currentUser,
+  onReplyToMessage,
+  getMessageActions
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -66,6 +70,39 @@ export const MessageList: React.FC<MessageListProps> = ({
       scrollToBottom(messagesContainerRef.current)
     }
   }, [messages])
+
+  // Default message actions if app doesn't provide custom ones
+  const getDefaultActions = (message: Message | GroupMessage): MessageAction[] => {
+    const actions: MessageAction[] = []
+    
+    // Copy action (always available)
+    actions.push({
+      id: 'copy',
+      label: 'Copy',
+      icon: ({ size = 14 }) => <span style={{ fontSize: `${size}px` }}>📋</span>,
+      onClick: () => {
+        if (message.content) {
+          navigator.clipboard.writeText(message.content).then(() => {
+            console.log('Message copied to clipboard')
+          }).catch(err => {
+            console.error('Failed to copy message:', err)
+          })
+        }
+      }
+    })
+    
+    // Reply action (only for group chat)
+    if (onReplyToMessage) {
+      actions.push({
+        id: 'reply',
+        label: 'Reply',
+        icon: ({ size = 14 }) => <span style={{ fontSize: `${size}px` }}>↩️</span>,
+        onClick: () => onReplyToMessage(message)
+      })
+    }
+    
+    return actions
+  }
 
   return (
     <MessagesContainer 
@@ -107,6 +144,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                 message={message} 
                 isGroupChat={isGroupChat}
                 currentUser={currentUser}
+                actions={getMessageActions ? getMessageActions(message) : getDefaultActions(message)}
               />
             ))}
           </AnimatePresence>

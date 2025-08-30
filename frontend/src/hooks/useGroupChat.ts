@@ -1,6 +1,7 @@
 import { useCallback, useState, useRef, useEffect } from 'react'
 import { useWebSocket } from './useWebSocket'
 import { generateMessageId } from '../utils/chatUtils'
+import { Message } from './useChatMessages'
 
 // Extend the base Message interface for group chat
 export interface GroupMessage {
@@ -10,6 +11,7 @@ export interface GroupMessage {
   sender?: string // nickname for user messages
   timestamp: Date
   userId?: string // unique user identifier
+  replyTo?: GroupMessage // Message being replied to
 }
 
 export interface GroupUser {
@@ -26,6 +28,12 @@ export interface GroupChatResponse {
   users?: GroupUser[]
   userCount?: number
   error?: string
+  replyTo?: {
+    id: string
+    content: string
+    sender: string
+    type: string
+  }
 }
 
 interface UseGroupChatOptions {
@@ -154,6 +162,15 @@ export const useGroupChat = ({ websocketUrl, onMessagesUpdate, onRoomStatusChang
           
         case 'message':
           if (responseData.message && responseData.sender) {
+            // Check if this message is from us (either matching user ID, or no currentUser set yet and this matches our pending message)
+            if (currentUser && responseData.userId === currentUser.id) {
+              // This is definitely our message - update nickname if needed
+              if (responseData.sender !== currentUser.nickname) {
+                console.log(`🔄 Updating current user nickname from "${currentUser.nickname}" to "${responseData.sender}" (auto-join detected)`)
+                setCurrentUser(prev => prev ? { ...prev, nickname: responseData.sender || prev.nickname } : null)
+              }
+            }
+            
             // Add user message
             const chatMessage: GroupMessage = {
               id: generateMessageId(),
@@ -161,7 +178,16 @@ export const useGroupChat = ({ websocketUrl, onMessagesUpdate, onRoomStatusChang
               content: responseData.message,
               sender: responseData.sender,
               userId: responseData.userId,
-              timestamp: new Date()
+              timestamp: new Date(),
+              ...(responseData.replyTo && { 
+                replyTo: {
+                  id: responseData.replyTo.id,
+                  type: responseData.replyTo.type as 'user' | 'system',
+                  content: responseData.replyTo.content,
+                  sender: responseData.replyTo.sender,
+                  timestamp: new Date() // We don't have original timestamp, use current
+                }
+              })
             }
             
             setMessages(prev => {
@@ -251,21 +277,27 @@ export const useGroupChat = ({ websocketUrl, onMessagesUpdate, onRoomStatusChang
     setCurrentUser(null)
   }, [sendMessage, currentUser])
 
-  const sendGroupMessage = useCallback(async (content: string) => {
+  const sendGroupMessage = useCallback(async (content: string, replyTo?: GroupMessage | Message) => {
     if (!content.trim()) {
       console.log('❌ Cannot send empty message')
       return false
     }
     
     if (!currentUser) {
-      console.log('❌ Cannot send message - user not set:', currentUser)
+      console.log('❌ Cannot send message - user not joined. Current user:', currentUser)
       return false
     }
 
     const payload = {
       type: 'send_message',
       message: content.trim(),
-      room_id: 'general'  // Add required room_id field
+      room_id: 'general',  // Add required room_id field
+      ...(replyTo && { replyTo: {
+        id: replyTo.id,
+        content: replyTo.content,
+        sender: replyTo.type === 'user' && 'sender' in replyTo ? replyTo.sender : (replyTo.type !== 'human' ? 'Andrei' : 'You'),
+        type: replyTo.type
+      }})
     }
     
     console.log('📤 Sending group message:', payload, 'Current user:', currentUser)
