@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { HiClipboard, HiRefresh } from 'react-icons/hi'
+import { HiClipboard, HiRefresh, HiColorSwatch } from 'react-icons/hi'
 import { useWindowStore } from '../stores/windowStore'
+import { useBackgroundStore } from '../stores/backgroundStore'
 import { useChat } from '../hooks'
 import { MessageList, ChatInput, type MessageAction } from '../components/chat'
 import { ChatContainer } from '../styles/chat'
@@ -13,6 +14,7 @@ interface AndreiChatAppProps {
 
 export const AndreiChatApp: React.FC<AndreiChatAppProps> = ({ windowId }) => {
   const { getWindow, updateWindowData } = useWindowStore()
+  const { setChatBackgroundImage } = useBackgroundStore()
   const window = getWindow(windowId)
   
   const [inputValue, setInputValue] = useState('')
@@ -86,6 +88,43 @@ export const AndreiChatApp: React.FC<AndreiChatAppProps> = ({ windowId }) => {
         }
       }
     })
+    
+    // Set as background action (only for AI responses with generated images)
+    if ((message.type === 'assistant' || message.type === 'ai') && 
+        'attachments' in message && 
+        message.attachments && 
+        message.attachments.length > 0) {
+      
+      // Check if this message contains a generated image
+      const hasGeneratedImage = message.attachments.some(att => 
+        att.name === 'generated-image.png' || 
+        att.name.startsWith('generated-image') ||
+        (att.type.startsWith('image/') && att.url?.startsWith('data:image'))
+      )
+      
+      if (hasGeneratedImage) {
+        actions.push({
+          id: 'set-background',
+          label: 'Set as Chat with Friends background',
+          icon: HiColorSwatch,
+          onClick: () => {
+            const imageAttachment = message.attachments?.find(att => 
+              att.name === 'generated-image.png' || 
+              att.name.startsWith('generated-image') ||
+              (att.type.startsWith('image/') && att.url?.startsWith('data:image'))
+            )
+            
+            if (imageAttachment?.url) {
+              setChatBackgroundImage(imageAttachment.url)
+              console.log('🖼️ Set chat background image')
+              
+              // Show a brief confirmation message (optional)
+              // You could add a toast notification here if you have one
+            }
+          }
+        })
+      }
+    }
     
     // Regenerate action (only for AI responses in regular chat)
     if (message.type === 'assistant' || message.type === 'ai') {

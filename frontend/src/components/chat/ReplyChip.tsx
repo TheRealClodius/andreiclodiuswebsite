@@ -2,6 +2,7 @@ import React from 'react'
 import { HiX, HiReply } from 'react-icons/hi'
 import styled from 'styled-components'
 import { Message } from '../../hooks/useChatMessages'
+import { Button } from '../../design-system'
 import { GroupMessage } from '../../hooks/useGroupChat'
 
 interface ReplyChipProps {
@@ -88,46 +89,7 @@ const ReplyContent = styled.div`
   }
 `
 
-const RemoveReplyButton = styled.button`
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  color: ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? 'rgba(147, 197, 253, 0.6)' // Light blue icon in dark mode
-      : 'rgba(37, 99, 235, 0.6)' // Dark blue icon in light mode
-  };
-  cursor: pointer;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    background: ${() => 
-      window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(59, 130, 246, 0.2)' // Blue hover background in dark mode
-        : 'rgba(59, 130, 246, 0.1)' // Blue hover background in light mode
-    };
-    color: ${() => 
-      window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(147, 197, 253, 0.9)' // Brighter blue icon in dark mode
-        : 'rgba(37, 99, 235, 0.9)' // Darker blue icon in light mode
-    };
-  }
-  
-  &:active {
-    background: ${() => 
-      window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(59, 130, 246, 0.3)' // Brighter active background in dark mode
-        : 'rgba(59, 130, 246, 0.15)' // Darker active background in light mode
-    };
-    transform: scale(0.95);
-  }
-`
+// RemoveReplyButton replaced with Button primitive
 
 export const ReplyChipComponent: React.FC<ReplyChipProps> = ({ 
   message, 
@@ -164,9 +126,21 @@ export const ReplyChipComponent: React.FC<ReplyChipProps> = ({
             {truncatedContent}
           </div>
         </ReplyContent>
-        <RemoveReplyButton onClick={onRemove}>
-          <HiX size={14} />
-        </RemoveReplyButton>
+              <Button
+        variant="ghost"
+        size="sm"
+        onClick={onRemove}
+        asMotion
+        style={{
+          width: '24px',
+          height: '24px',
+          borderRadius: '6px',
+          padding: 0,
+          minHeight: 'auto'
+        }}
+      >
+        <HiX size={14} />
+      </Button>
       </ReplyChip>
     </ReplyChipContainer>
   )

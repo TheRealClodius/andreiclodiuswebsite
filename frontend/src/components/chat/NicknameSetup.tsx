@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import styled from 'styled-components'
-import { motion } from 'framer-motion'
+import { motion as framerMotion } from 'framer-motion'
+import { Button } from '../../design-system'
+import { motion } from '../../design-system'
 import { IoChatbubbleEllipses, IoWarning, IoPeople } from 'react-icons/io5'
 import { useSystemTheme } from '../../hooks/useSystemTheme'
 
@@ -20,7 +22,7 @@ const SetupContainer = styled.div<{ $isDark: boolean }>`
   background: ${props => props.$isDark ? 'rgba(26, 26, 26, 0.98)' : 'rgba(255, 255, 255, 0.98)'};
 `
 
-const WelcomeIcon = styled(motion.div)<{ $isDark: boolean }>`
+const WelcomeIcon = styled(framerMotion.div)<{ $isDark: boolean }>`
   font-size: 4rem;
   color: ${props => props.$isDark ? '#6366f1' : '#4f46e5'};
   margin-bottom: 1.5rem;
@@ -29,7 +31,7 @@ const WelcomeIcon = styled(motion.div)<{ $isDark: boolean }>`
   justify-content: center;
 `
 
-const Title = styled(motion.h1)<{ $isDark: boolean }>`
+const Title = styled(framerMotion.h1)<{ $isDark: boolean }>`
   font-size: 1.75rem;
   font-weight: 600;
   color: ${props => props.$isDark ? '#f3f4f6' : '#111827'};
@@ -37,7 +39,7 @@ const Title = styled(motion.h1)<{ $isDark: boolean }>`
   text-align: center;
 `
 
-const Subtitle = styled(motion.p)<{ $isDark: boolean }>`
+const Subtitle = styled(framerMotion.p)<{ $isDark: boolean }>`
   font-size: 1rem;
   color: ${props => props.$isDark ? '#9ca3af' : '#6b7280'};
   margin: 0 0 2rem 0;
@@ -46,7 +48,7 @@ const Subtitle = styled(motion.p)<{ $isDark: boolean }>`
   line-height: 1.5;
 `
 
-const NicknameForm = styled(motion.form)`
+const NicknameForm = styled(framerMotion.form)`
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -74,32 +76,9 @@ const NicknameInput = styled.input<{ $isDark: boolean }>`
   }
 `
 
-const JoinButton = styled.button<{ $isDark: boolean; $disabled: boolean }>`
-  padding: 0.875rem 1.5rem;
-  background: ${props => props.$disabled ? 
-    (props.$isDark ? 'rgba(75, 85, 99, 0.4)' : 'rgba(156, 163, 175, 0.5)') :
-    (props.$isDark ? '#6366f1' : '#4f46e5')};
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
-  transition: all 0.2s ease;
-  
-  ${props => !props.$disabled && `
-    &:hover {
-      background: ${props.$isDark ? '#5b58eb' : '#4338ca'};
-      transform: translateY(-1px);
-    }
-    
-    &:active {
-      transform: translateY(0);
-    }
-  `}
-`
+// JoinButton replaced with Button primitive
 
-const StatusMessage = styled(motion.div)<{ $isDark: boolean; $type: 'error' | 'info' | 'warning' }>`
+const StatusMessage = styled(framerMotion.div)<{ $isDark: boolean; $type: 'error' | 'info' | 'warning' }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -156,8 +135,7 @@ export const NicknameSetup: React.FC<NicknameSetupProps> = ({
         <StatusMessage 
           $isDark={isDark} 
           $type="warning"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          {...motion.presets.statusMessage}
         >
           <IoWarning />
           Chat server not available - Backend not implemented yet
@@ -170,8 +148,7 @@ export const NicknameSetup: React.FC<NicknameSetupProps> = ({
         <StatusMessage 
           $isDark={isDark} 
           $type="info"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          {...motion.presets.statusMessage}
         >
           <IoPeople />
           Joining chat room...
@@ -184,8 +161,7 @@ export const NicknameSetup: React.FC<NicknameSetupProps> = ({
         <StatusMessage 
           $isDark={isDark} 
           $type="error"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          {...motion.presets.statusMessage}
         >
           <IoWarning />
           Chat is full for now, sorry! (20 users max)
@@ -202,36 +178,32 @@ export const NicknameSetup: React.FC<NicknameSetupProps> = ({
     <SetupContainer $isDark={isDark}>
       <WelcomeIcon 
         $isDark={isDark}
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.1 }}
+        {...motion.presets.scaleIn}
+        transition={{ ...motion.presets.scaleIn.transition, delay: 0.1 }}
       >
         <IoChatbubbleEllipses />
       </WelcomeIcon>
       
       <Title 
         $isDark={isDark}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        {...motion.presets.staggered}
+        transition={{ ...motion.presets.staggered.transition, delay: 0.2 }}
       >
         Chat with Friends
       </Title>
       
       <Subtitle 
         $isDark={isDark}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        {...motion.presets.staggered}
+        transition={{ ...motion.presets.staggered.transition, delay: 0.3 }}
       >
         Join the group chat and connect with up to 20 friends in real-time
       </Subtitle>
 
       <NicknameForm 
         onSubmit={handleSubmit}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
+        {...motion.presets.staggered}
+        transition={{ ...motion.presets.staggered.transition, delay: 0.4 }}
       >
         <NicknameInput
           ref={inputRef}
@@ -244,14 +216,16 @@ export const NicknameSetup: React.FC<NicknameSetupProps> = ({
           disabled={status === 'joining'}
         />
         
-        <JoinButton
+        <Button
           type="submit"
-          $isDark={isDark}
-          $disabled={isDisabled}
+          variant="primary"
+          size="md"
           disabled={isDisabled}
+          loading={status === 'joining'}
+          asMotion
         >
-          {status === 'joining' ? 'Joining...' : 'Join Chat'}
-        </JoinButton>
+          Join Chat
+        </Button>
       </NicknameForm>
 
       {renderStatusMessage()}

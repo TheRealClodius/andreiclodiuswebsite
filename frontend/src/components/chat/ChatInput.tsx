@@ -1,15 +1,53 @@
 import React, { useRef, useEffect, useCallback } from 'react'
+import styled from 'styled-components'
 import { IoArrowUp } from 'react-icons/io5'
 import { HiPlus } from 'react-icons/hi'
 import { 
   InputContainer, 
   InputWrapper, 
-  PromptInput, 
-  SendButton,
-  PlusButton 
+  PromptInput
 } from '../../styles/chat'
+import { Button } from '../../design-system'
 import { FileChips } from './FileUpload'
 import { ReplyChip } from './index'
+
+// Styled wrapper to fix transform conflicts
+const PlusButtonWrapper = styled.div`
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  z-index: 2;
+  
+  /* Override any transforms from the Button component */
+  button {
+    width: 100%;
+    height: 100%;
+    border-radius: ${({ theme }) => theme.semanticRadii.button.small} !important;
+    padding: 0 !important;
+    min-height: auto !important;
+    
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
+      transform: none !important;
+    }
+  }
+`
+
+// Styled wrapper for send button  
+const SendButtonWrapper = styled.div`
+  button {
+    width: 40px;
+    height: 40px;
+    border-radius: ${({ theme }) => theme.radii.sm} !important; /* Use 4px radii.sm token directly */
+    padding: 0 !important;
+    min-height: auto !important;
+    border: none !important; /* Remove any border/outline */
+    outline: none !important;
+  }
+`
 import { Message } from '../../hooks/useChatMessages'
 import { GroupMessage } from '../../hooks/useGroupChat'
 import { adjustTextareaHeight } from '../../utils/chatUtils'
@@ -86,9 +124,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       />
       
       <InputWrapper>
-        <PlusButton onClick={handlePlusClick}>
-          <HiPlus size={14} />
-        </PlusButton>
+        <PlusButtonWrapper>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handlePlusClick}
+            asMotion
+          >
+            <HiPlus size={14} />
+          </Button>
+        </PlusButtonWrapper>
         <input
           ref={fileInputRef}
           type="file"
@@ -105,13 +150,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           placeholder={placeholder}
           rows={1}
         />
-        <SendButton 
-          $disabled={!canSend}
-          onClick={onSendMessage}
-          disabled={!canSend}
-        >
-          <IoArrowUp size={16} />
-        </SendButton>
+        <SendButtonWrapper>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={!canSend}
+            onClick={onSendMessage}
+            asMotion
+          >
+            <IoArrowUp size={16} />
+          </Button>
+        </SendButtonWrapper>
       </InputWrapper>
     </InputContainer>
   )

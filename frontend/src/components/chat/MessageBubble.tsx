@@ -7,7 +7,7 @@ import { AttachmentPreview, AIImageDisplay, MessageActionsButton, MessageActions
 import { Message } from '../../hooks/useChatMessages'
 import { GroupMessage } from '../../hooks/useGroupChat'
 // import { formatTime } from '../../utils/chatUtils'
-import { messageEntranceVariants } from '../../styles/chat/animations'
+import { motion } from '../../design-system'
 import { getUserColor } from '../../utils/userColors'
 import styled from 'styled-components'
 
@@ -40,6 +40,19 @@ const BubbleActionsButton = styled.div<{ $isVisible: boolean }>`
 
 const StyledMessageBubbleWithActions = styled(StyledMessageBubble)<{ $isHuman: boolean }>`
   position: relative;
+`
+
+const SystemMessageBubble = styled(StyledMessageBubble)<{ $isHuman: boolean }>`
+  max-width: 90%;
+  align-self: center;
+  background: ${({ theme }) => theme.palette.chat.bubble.system.background};
+  color: ${({ theme }) => theme.palette.chat.bubble.system.text};
+  font-size: ${({ theme }) => theme.fontSize.xs};
+  font-style: italic;
+  border-radius: 16px;
+  padding: ${({ theme }) => `${theme.spacing[1]} ${theme.spacing[3]}`}; /* 6px 12px */
+  text-align: center;
+  border: none;
 `
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ 
@@ -143,28 +156,19 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   // Don't show actions for system messages
   const showActions = !isSystemMessage && actions.length > 0
 
-  const BubbleComponent = showActions ? StyledMessageBubbleWithActions : StyledMessageBubble
+  const BubbleComponent = isSystemMessage 
+    ? SystemMessageBubble 
+    : showActions 
+      ? StyledMessageBubbleWithActions 
+      : StyledMessageBubble
 
   return (
     <MessageContainer>
       <BubbleComponent 
-        initial="hidden"
-        animate="visible"
-        variants={messageEntranceVariants}
+        {...motion.presets.messageEntrance}
         $isHuman={isHumanMessage}
         onMouseEnter={handleBubbleMouseEnter}
         onMouseLeave={handleBubbleMouseLeave}
-        style={isSystemMessage ? {
-          maxWidth: '90%',
-          alignSelf: 'center',
-          background: 'rgba(107, 114, 128, 0.1)',
-          color: window.matchMedia('(prefers-color-scheme: dark)').matches ? '#9ca3af' : '#6b7280',
-          fontSize: '13px',
-          fontStyle: 'italic',
-          borderRadius: '16px',
-          padding: '6px 12px',
-          textAlign: 'center' as const
-        } : undefined}
       >
         {senderName && (
           <MessageHeader $isHuman={isHumanMessage} $userColor={userNameColor}>
@@ -213,6 +217,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             <MessageActionsButton 
               onClick={handleActionsClick}
               className="message-actions"
+              isOnUserBubble={isHumanMessage}
             />
             <AnimatePresence>
               {showActionsMenu && (

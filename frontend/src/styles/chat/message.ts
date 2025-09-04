@@ -1,78 +1,57 @@
 import styled from 'styled-components'
 import { motion } from 'framer-motion'
-import { pulseAnimation } from './animations'
+import { pulseAnimation } from '../../design-system/tokens/motion'
 
 export const MessageBubble = styled(motion.div)<{ $isHuman: boolean }>`
   max-width: ${props => props.$isHuman ? '70%' : '85%'};
   align-self: ${props => props.$isHuman ? 'flex-end' : 'flex-start'};
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-size: 14px;
-  line-height: 1.5;
+  padding: ${({ theme }) => `${theme.spacing[2]} ${theme.spacing[3]}`}; /* 8px 12px */
+  border-radius: ${({ theme }) => theme.semanticRadii.chat.bubble.base};
+  font-size: ${({ theme }) => theme.fontSize.sm};
+  font-family: ${({ theme }) => theme.fontFamily.sans.join(', ')};
+  font-weight: ${({ theme }) => theme.fontWeight.normal};
+  line-height: ${({ theme }) => theme.lineHeight.relaxed};
   word-wrap: break-word;
   position: relative;
   
   ${props => props.$isHuman ? `
-    background: linear-gradient(135deg, #007AFF 0%, #0051D5 100%);
-    color: white;
-    border-bottom-right-radius: 6px;
+    background: ${props.theme.palette.chat.bubble.user.background};
+    color: ${props.theme.palette.chat.bubble.user.text};
+    border-bottom-right-radius: ${props.theme.semanticRadii.chat.bubble.tail};
   ` : `
-    background: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? 'rgba(255, 255, 255, 0.08)'  // Light background in dark mode
-      : 'rgba(0, 0, 0, 0.06)'        // Dark background in light mode
-    };
-    color: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? '#e0e0e0'                    // Light text in dark mode
-      : '#333'                       // Dark text in light mode
-    };
-    border-bottom-left-radius: 6px;
-    border: 1px solid ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? 'rgba(255, 255, 255, 0.1)'  // Light border in dark mode
-      : 'rgba(0, 0, 0, 0.08)'        // Dark border in light mode
-    };
+    background: ${props.theme.palette.chat.bubble.assistant.background};
+    color: ${props.theme.palette.chat.bubble.assistant.text};
+    border-bottom-left-radius: ${props.theme.semanticRadii.chat.bubble.tail};
+    border: 1px solid ${props.theme.palette.chat.bubble.assistant.border};
     
     /* Markdown styling for AI messages */
     & strong {
-      font-weight: 600;
-      color: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? '#fff'                     // Bright white for bold in dark mode
-        : '#000'                     // Black for bold in light mode
-      };
+      font-weight: ${props.theme.fontWeight.semibold};
+      color: ${props.theme.palette.chat.markdown.strong};
     }
     
     & em {
       font-style: italic;
       opacity: 0.9;
+      color: ${props.theme.palette.chat.markdown.emphasis};
     }
     
     & code {
-      background: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(255, 255, 255, 0.15)' // Light code background in dark mode
-        : 'rgba(0, 0, 0, 0.08)'        // Dark code background in light mode
-      };
-      color: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? '#ff6b6b'                    // Light red for code in dark mode
-        : '#d63384'                    // Dark red for code in light mode
-      };
-      padding: 2px 4px;
-      border-radius: 4px;
-      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      background: ${props.theme.palette.chat.markdown.codeBackground};
+      color: ${props.theme.palette.chat.markdown.code};
+      padding: ${props.theme.spacing[0]} ${props.theme.spacing[1]}; /* 2px 4px */
+      border-radius: ${props.theme.semanticRadii.chat.code};
+      font-family: ${props.theme.fontFamily.mono.join(', ')};
       font-size: 0.9em;
     }
     
     & pre {
-      background: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(255, 255, 255, 0.1)'  // Light code block background in dark mode
-        : 'rgba(0, 0, 0, 0.05)'        // Dark code block background in light mode
-      };
-      border: 1px solid ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(255, 255, 255, 0.2)'  // Light border in dark mode
-        : 'rgba(0, 0, 0, 0.1)'         // Dark border in light mode
-      };
-      border-radius: 8px;
-      padding: 12px;
+      background: ${props.theme.palette.chat.markdown.codeBlockBackground};
+      border: 1px solid ${props.theme.palette.chat.markdown.codeBlockBorder};
+      border-radius: ${props.theme.semanticRadii.chat.codeBlock};
+      padding: ${props.theme.spacing[3]}; /* 12px */
       overflow-x: auto;
-      margin: 8px 0;
+      margin: ${props.theme.spacing[2]} 0; /* 8px 0 */
       
       & code {
         background: none;
@@ -84,43 +63,50 @@ export const MessageBubble = styled(motion.div)<{ $isHuman: boolean }>`
     }
     
     & a {
-      color: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? '#64b5f6'                    // Light blue for links in dark mode
-        : '#1976d2'                    // Dark blue for links in light mode
-      };
+      color: ${props.theme.palette.chat.markdown.link};
       text-decoration: none;
       
       &:hover {
         text-decoration: underline;
+        color: ${props.theme.palette.chat.markdown.linkHover};
       }
     }
     
     & ul, & ol {
-      margin: 8px 0;
-      padding-left: 20px;
+      margin: ${props.theme.spacing[2]} 0; /* 8px 0 */
+      padding-left: ${props.theme.spacing[5]}; /* 20px */
     }
     
     & li {
-      margin: 4px 0;
+      margin: ${props.theme.spacing[1]} 0; /* 4px 0 */
     }
     
     & h1, & h2, & h3, & h4, & h5, & h6 {
-      margin: 12px 0 8px 0;
-      font-weight: 600;
-      color: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? '#fff'                       // Bright white for headers in dark mode
-        : '#000'                       // Black for headers in light mode
-      };
+      margin: ${props.theme.spacing[3]} 0 ${props.theme.spacing[2]} 0; /* 12px 0 8px 0 */
+      font-weight: ${props.theme.fontWeight.semibold};
+      color: ${props.theme.palette.chat.markdown.heading};
     }
     
-    & h1 { font-size: 1.3em; }
-    & h2 { font-size: 1.2em; }
-    & h3 { font-size: 1.1em; }
-    & h4, & h5, & h6 { font-size: 1em; }
+    & h1 { 
+      font-size: ${props.theme.fontSize.lg}; 
+      font-family: ${props.theme.fontFamily.sans.join(', ')};
+    }
+    & h2 { 
+      font-size: ${props.theme.fontSize.base}; 
+      font-family: ${props.theme.fontFamily.sans.join(', ')};
+    }
+    & h3 { 
+      font-size: ${props.theme.fontSize.sm}; 
+      font-family: ${props.theme.fontFamily.sans.join(', ')};
+    }
+    & h4, & h5, & h6 { 
+      font-size: ${props.theme.fontSize.sm}; 
+      font-family: ${props.theme.fontFamily.sans.join(', ')};
+    }
     
     & p {
-      margin: 8px 0;
-      line-height: 1.5;
+      margin: ${props.theme.spacing[2]} 0; /* 8px 0 */
+      line-height: ${props.theme.lineHeight.relaxed};
       
       &:first-child {
         margin-top: 0;
@@ -132,12 +118,9 @@ export const MessageBubble = styled(motion.div)<{ $isHuman: boolean }>`
     }
     
     & blockquote {
-      border-left: 3px solid ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(255, 255, 255, 0.3)'  // Light border in dark mode
-        : 'rgba(0, 0, 0, 0.2)'         // Dark border in light mode
-      };
-      padding-left: 12px;
-      margin: 8px 0;
+      border-left: 3px solid ${props.theme.palette.chat.markdown.blockquoteBorder};
+      padding-left: ${props.theme.spacing[3]}; /* 12px */
+      margin: ${props.theme.spacing[2]} 0; /* 8px 0 */
       opacity: 0.8;
     }
     
@@ -145,49 +128,31 @@ export const MessageBubble = styled(motion.div)<{ $isHuman: boolean }>`
     & table {
       width: 100%;
       border-collapse: collapse;
-      margin: 12px 0;
-      border-radius: 8px;
+      margin: ${props.theme.spacing[3]} 0; /* 12px 0 */
+      border-radius: ${props.theme.semanticRadii.chat.table};
       overflow: hidden;
-      border: 1px solid ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(255, 255, 255, 0.2)'  // Light border in dark mode
-        : 'rgba(0, 0, 0, 0.1)'         // Dark border in light mode
-      };
+      border: 1px solid ${props.theme.palette.chat.markdown.tableBorder};
     }
     
     & th, & td {
-      padding: 8px 12px;
-      border-bottom: 0px solid ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(255, 255, 255, 0.1)'  // Light border in dark mode
-        : 'rgba(0, 0, 0, 0.08)'        // Dark border in light mode
-      };
+      padding: ${props.theme.spacing[2]} ${props.theme.spacing[3]}; /* 8px 12px */
+      border-bottom: 0px solid ${props.theme.palette.chat.markdown.tableCellBorder};
       text-align: left;
       vertical-align: top;
     }
     
     & th {
-      background: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(255, 255, 255, 0.1)'  // Light header background in dark mode
-        : 'rgba(0, 0, 0, 0.1)'        // Dark header background in light mode
-      };
-      font-weight: 600;
-      color: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? '#fff'                       // White header text in dark mode
-        : '#000'                       // Black header text in light mode
-      };
+      background: ${props.theme.palette.chat.markdown.tableHeaderBackground};
+      font-weight: ${props.theme.fontWeight.semibold};
+      color: ${props.theme.palette.chat.markdown.tableHeaderText};
     }
     
     & tr:nth-child(odd) {
-      background: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(0, 0, 0, 0.2)'        // Slightly darker than bubble in dark mode
-        : 'rgba(255, 255, 255, 0.45)'  // Slightly lighter than bubble in light mode
-      };
+      background: ${props.theme.palette.chat.markdown.tableRowOdd};
     }
     
     & tr:nth-child(even) {
-      background: ${window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(255, 255, 255, 0.03)' // Subtle stripe in dark mode
-        : 'rgba(0, 0, 0, 0.02)'        // Subtle stripe in light mode
-      };
+      background: ${props.theme.palette.chat.markdown.tableRowEven};
     }
     
     & tr:last-child td {
@@ -195,52 +160,48 @@ export const MessageBubble = styled(motion.div)<{ $isHuman: boolean }>`
     }
     
     & td:first-child, & th:first-child {
-      padding-left: 16px;
+      padding-left: ${props.theme.spacing[4]}; /* 16px */
     }
     
     & td:last-child, & th:last-child {
-      padding-right: 16px;
+      padding-right: ${props.theme.spacing[4]}; /* 16px */
     }
   `}
 `
 
 export const MessageHeader = styled.div<{ $isHuman: boolean; $userColor?: string }>`
-  font-size: 12px;
-  font-weight: 600; // Make names bold
-  margin-bottom: 4px;
-  opacity: 0.9; // Slightly more opacity for better visibility of bold text
+  font-size: ${({ theme }) => theme.fontSize.xs};
+  font-weight: ${({ theme }) => theme.fontWeight.semibold};
+  margin-bottom: ${({ theme }) => theme.spacing[1]}; /* 4px */
+  opacity: 0.9;
   color: ${props => {
     if (props.$userColor) {
       // Use custom user color for group chat
       return props.$userColor;
     }
     // Default colors for non-group chat
-    return props.$isHuman ? 'rgba(190, 202, 255, 0.9)' : (
-      window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? '#b0b0b0'      // Muted light text in dark mode
-        : '#666'         // Muted dark text in light mode
-    );
+    return props.$isHuman 
+      ? props.theme.palette.chat.header.userText
+      : props.theme.palette.chat.header.assistantText;
   }};
 `
 
 export const MessageTime = styled.div`
-  font-size: 10px;
+  font-size: ${({ theme }) => theme.fontSize.xs};
+  font-weight: ${({ theme }) => theme.fontWeight.normal};
+  font-family: ${({ theme }) => theme.fontFamily.sans.join(', ')};
   opacity: 0.6;
-  margin-top: 4px;
+  margin-top: ${({ theme }) => theme.spacing[1]}; /* 4px */
   text-align: right;
 `
 
 export const StatusIndicator = styled.div<{ $isTyping: boolean }>`
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  font-size: 12px;
-  color: ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? '#b0b0b0'      // Muted light text in dark mode
-      : '#666'         // Muted dark text in light mode
-  };
+  gap: ${({ theme }) => theme.spacing[2]}; /* 8px */
+  padding: ${({ theme }) => `${theme.spacing[2]} ${theme.spacing[4]}`}; /* 8px 16px */
+  font-size: ${({ theme }) => theme.fontSize.xs};
+  color: ${({ theme }) => theme.palette.chat.status.text};
   opacity: ${props => props.$isTyping ? 1 : 0};
   transition: opacity 0.3s ease;
   
@@ -249,7 +210,7 @@ export const StatusIndicator = styled.div<{ $isTyping: boolean }>`
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #007AFF;
+    background: ${({ theme }) => theme.palette.chat.status.indicator};
     animation: ${props => props.$isTyping ? `${pulseAnimation} 1.5s infinite` : 'none'};
   }
 `

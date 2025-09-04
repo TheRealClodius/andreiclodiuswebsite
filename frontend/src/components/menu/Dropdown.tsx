@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion as framerMotion, AnimatePresence } from 'framer-motion'
+import { motion } from '../../design-system'
 import { DropdownItem, DropdownItemData } from './DropdownItem'
 
 interface DropdownProps {
@@ -17,178 +18,45 @@ interface DropdownPosition {
   transformOrigin: string
 }
 
-const DropdownContainer = styled(motion.div)<{ $position: DropdownPosition }>`
+const DropdownContainer = styled(framerMotion.div)<{ $position: DropdownPosition }>`
   position: absolute;
   ${props => props.$position.top !== undefined ? `top: ${props.$position.top}px;` : ''}
   ${props => props.$position.bottom !== undefined ? `bottom: ${props.$position.bottom}px;` : ''}
   ${props => props.$position.left !== undefined ? `left: ${props.$position.left}px;` : ''}
   ${props => props.$position.right !== undefined ? `right: ${props.$position.right}px;` : ''}
   transform-origin: ${props => props.$position.transformOrigin};
-  background: ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? 'rgba(42, 42, 42, 0.95)' // Dark background in dark mode
-      : 'rgba(255, 255, 255, 0.95)' // Light background in light mode
-  };
+  background: ${props => props.theme.palette.background.elevated};
   backdrop-filter: blur(20px);
-  border: 1px solid ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? 'rgba(255, 255, 255, 0.1)' // Light border in dark mode
-      : 'rgba(0, 0, 0, 0.1)' // Dark border in light mode
-  };
-  border-radius: 8px;
-  box-shadow: 0 8px 32px ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? 'rgba(0, 0, 0, 0.5)' // Stronger shadow in dark mode
-      : 'rgba(0, 0, 0, 0.3)' // Normal shadow in light mode
-  };
+  border: 1px solid ${props => props.theme.palette.border.default};
+  border-radius: ${props => props.theme.semanticRadii.dropdown.base};
+  box-shadow: ${props => props.theme.semanticShadows.dropdown.floating};
   min-width: 180px;
   z-index: 11000;
   overflow: visible;
-  padding: 4px 4px 4px 4px;
+  padding: ${props => props.theme.semanticSpacing.interactive.dropdownPadding};
 `
 
-const Submenu = styled(motion.div)`
+const Submenu = styled(framerMotion.div)`
   position: absolute;
   top: -5px;
   left: 100%;
-  background: ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? 'rgba(42, 42, 42, 0.99)' // Dark background in dark mode
-      : 'rgba(255, 255, 255, 0.99)' // Light background in light mode
-  };
-  border: 1px solid ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? 'rgba(255, 255, 255, 0.1)' // Light border in dark mode
-      : 'rgba(0, 0, 0, 0.1)' // Dark border in light mode
-  };
-  border-radius: 8px;
-  box-shadow: 0 8px 32px ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? 'rgba(0, 0, 0, 0.5)' // Stronger shadow in dark mode
-      : 'rgba(0, 0, 0, 0.3)' // Normal shadow in light mode
-  };
+  background: ${props => props.theme.palette.background.elevated};
+  border: 1px solid ${props => props.theme.palette.border.default};
+  border-radius: ${props => props.theme.semanticRadii.menu.base};
+  box-shadow: ${props => props.theme.semanticShadows.dropdown.floating};
   min-width: 160px;
   z-index: 11001;
   overflow: hidden;
-  padding: 4px 4px 4px 4px;
+  padding: ${props => props.theme.semanticSpacing.interactive.dropdownPadding};
 `
 
-const createDropdownVariants = (transformOrigin: string) => ({
-  initial: { 
-    opacity: 0, 
-    y: transformOrigin.includes('bottom') ? 2 : -2, 
-    scale: 0.95
-  },
-  animate: { 
-    opacity: 1, 
-    y: 0, 
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 25,
-      mass: 0.5,
-      opacity: { duration: 0.15 },
-      staggerChildren: 0.02,
-      delayChildren: 0.01
-    }
-  },
-  exit: { 
-    opacity: 0, 
-    y: transformOrigin.includes('bottom') ? 2 : -2,
-    scale: 0.95,
-    transition: {
-      duration: 0.12,
-      ease: [0.4, 0, 1, 1],
-      staggerChildren: 0.01,
-      staggerDirection: -1
-    }
-  }
-})
 
-const dropdownItemVariants = {
-  initial: { 
-    opacity: 0, 
-    x: 0,
-    transition: { duration: 0.1 }
-  },
-  animate: { 
-    opacity: 1, 
-    x: 0,
-    transition: {
-      type: "spring",
-      stiffness: 500,
-      damping: 30,
-      mass: 0.3
-    }
-  },
-  exit: { 
-    opacity: 0, 
-    x: -2,
-    transition: { 
-      duration: 0.08,
-      ease: [0.4, 0, 1, 1]
-    }
-  }
-}
 
-const submenuVariants = {
-  initial: { 
-    opacity: 0, 
-    x: -2, 
-    transformOrigin: "left center"
-  },
-  animate: { 
-    opacity: 1, 
-    x: 0, 
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 450,
-      damping: 22,
-      mass: 0.4,
-      opacity: { duration: 0.12 },
-      staggerChildren: 0.015,
-      delayChildren: 0.005
-    }
-  },
-  exit: { 
-    opacity: 0, 
-    x: -2, 
-    transition: {
-      duration: 0.1,
-      ease: [0.4, 0, 1, 1],
-      staggerChildren: 0.008,
-      staggerDirection: -1
-    }
-  }
-}
 
-const submenuItemVariants = {
-  initial: { 
-    opacity: 0, 
-    x: -2,
-    transition: { duration: 0.08 }
-  },
-  animate: { 
-    opacity: 1, 
-    x: 0,
-    transition: {
-      type: "spring",
-      stiffness: 600,
-      damping: 35,
-      mass: 0.2
-    }
-  },
-  exit: { 
-    opacity: 0, 
-    x: -2,
-    transition: { 
-      duration: 0.06,
-      ease: [0.4, 0, 1, 1]
-    }
-  }
-}
+
+
+
+
 
 export const Dropdown: React.FC<DropdownProps> = ({ items, onClose, enableSmartPositioning = false }) => {
   const [hoveredSubmenu, setHoveredSubmenu] = useState<string | null>(null)
@@ -259,7 +127,7 @@ export const Dropdown: React.FC<DropdownProps> = ({ items, onClose, enableSmartP
     setPosition(newPosition)
   }, [items.length, enableSmartPositioning])
 
-  const dropdownVariants = createDropdownVariants(position.transformOrigin)
+  // Dropdown animations now handled by motion tokens
 
   const handleItemClick = (item: DropdownItemData) => {
     if (!item.submenu && item.onClick) {
@@ -270,20 +138,17 @@ export const Dropdown: React.FC<DropdownProps> = ({ items, onClose, enableSmartP
 
   const createSubmenuItems = (submenuItems: DropdownItemData[]) => {
     return submenuItems.map(subItem => (
-      <motion.div
-        key={subItem.id}
-        variants={submenuItemVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-      >
-        <DropdownItem
-          item={{
-            ...subItem,
-            onClick: () => handleItemClick(subItem)
-          }}
-        />
-      </motion.div>
+              <framerMotion.div
+          key={subItem.id}
+          {...motion.presets.submenuSlide}
+        >
+          <DropdownItem
+            item={{
+              ...subItem,
+              onClick: () => handleItemClick(subItem)
+            }}
+          />
+        </framerMotion.div>
     ))
   }
 
@@ -291,18 +156,12 @@ export const Dropdown: React.FC<DropdownProps> = ({ items, onClose, enableSmartP
     <DropdownContainer
       ref={dropdownRef}
       $position={position}
-      variants={dropdownVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
+      {...motion.presets.dropdownEntrance}
     >
       {items.map(item => (
-        <motion.div
+        <framerMotion.div
           key={item.id}
-          variants={dropdownItemVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
+          {...motion.presets.dropdownItem}
         >
           <DropdownItem
             item={item}
@@ -311,17 +170,14 @@ export const Dropdown: React.FC<DropdownProps> = ({ items, onClose, enableSmartP
             <AnimatePresence>
               {item.submenu && hoveredSubmenu === item.id && (
                 <Submenu
-                  variants={submenuVariants}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
+                  {...motion.presets.submenuSlide}
                 >
                   {createSubmenuItems(item.submenu)}
                 </Submenu>
               )}
             </AnimatePresence>
           </DropdownItem>
-        </motion.div>
+        </framerMotion.div>
       ))}
     </DropdownContainer>
   )

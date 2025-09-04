@@ -1,95 +1,45 @@
-import React, { useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import React, { useState, useRef, useEffect } from 'react'
 import styled from 'styled-components'
-import { WindowState, useWindowStore } from '../stores/windowStore'
-import { createDragHandler, createResizeHandler, getResizeHandleStyle } from '../os/behaviors'
+import { motion } from 'framer-motion'
+import { WindowHeader } from '../design-system'
+import { useWindowStore, type WindowState as WindowType } from '../stores/windowStore'
+import { createResizeHandler, getResizeHandleStyle, RESIZE_DIRECTIONS } from '../os/behaviors'
+import { HEADER_HEIGHT } from '../constants/layout'
 
 interface WindowProps {
-  window: WindowState
+  window: WindowType
   children: React.ReactNode
-  isDark?: boolean
+  isActive: boolean
 }
 
-// Main window container with OS-level styling and animations
-const WindowContainer = styled(motion.div)<{ $isMaximized: boolean; $zIndex: number; $isInteracting: boolean; $isDark: boolean }>`
-  position: fixed;
-  background: ${props => props.$isDark ? 'rgba(26, 26, 26, 0.98)' : 'rgba(255, 255, 255, 0.95)'};
+// Window component using WindowChrome with design system
+const WindowContainer = styled(motion.div)<{ $isActive: boolean; $isInteracting: boolean; $isMaximized: boolean; $windowZIndex: number }>`
+  position: absolute;
+  background: ${props => props.theme.windowColors.background};
+  border-radius: ${props => props.$isMaximized ? '0px' : props.theme.semanticRadii.window.base};
+  box-shadow: ${props => props.theme.semanticShadows.window.floating};
   backdrop-filter: blur(20px);
-  border: 1px solid ${props => props.$isDark ? 'rgba(60, 60, 60, 0.3)' : 'rgba(255, 255, 255, 0.2)'};
-  border-radius: ${props => props.$isMaximized ? '0px' : '18px'};
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  border: 1px solid ${props => props.theme.windowColors.border};
   overflow: hidden;
-  z-index: ${props => props.$zIndex};
-
-  /* Smooth but snappy transitions for maximize/minimize (disabled during interaction) */
+  z-index: ${props => props.$windowZIndex};
   transition: ${props => props.$isInteracting ? 'none' : 'all 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'};
 
-  ${props => props.$isMaximized && `
-    border-radius: 0;
-    border: none;
-  `}
-`
-
-const WindowHeader = styled.div<{ $isDark: boolean }>`
-  height: 32px;
-  background: transparent;
-  border-bottom: 0px solid ${props => props.$isDark ? 'rgba(60, 60, 60, 0.3)' : 'transparent'};
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
-  cursor: grab;
-  user-select: none;
-  backdrop-filter: blur(20px);
-
-  &:active {
-    cursor: grabbing;
-  }
-`
-
-const WindowTitle = styled.div<{ $isDark: boolean }>`
-  font-size: 13px;
-  font-weight: 500;
-  color: ${props => props.$isDark ? '#e0e0e0' : '#333'};
-  text-align: center;
-  flex: 1;
-`
-
-const WindowControls = styled.div`
-  display: flex;
-  gap: 8px;
-`
-
-const ControlButton = styled.button<{ $hoverColor: string; $isDark: boolean; $showIcon?: boolean }>`
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: none;
-  background: ${props => props.$isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)'};
-  cursor: pointer;
-  transition: background-color 0.6s ease;
-  flex-shrink: 0;
-  padding: 4px;
-  position: relative;
-  
   &:hover {
-    background: ${props => props.$hoverColor};
-    transition: background-color 0.2s ease;
+    box-shadow: ${props => props.theme.semanticShadows.window.floating};
   }
+`
 
-  ${props => props.$showIcon && `
-    &::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 4px;
-      height: 4px;
-      background: ${props.$isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)'};
-      border-radius: 50%;
-    }
-  `}
+// Resize handle component
+const ResizeHandle = styled.div<{ direction: string }>`
+  position: absolute;
+  ${props => getResizeHandleStyle(props.direction)}
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+
+  ${WindowContainer}:hover & {
+    opacity: 1;
+  }
 `
 
 const WindowContent = styled.div`
@@ -97,41 +47,22 @@ const WindowContent = styled.div`
   overflow: hidden;
 `
 
-// OS-level resize handles
-const ResizeHandle = styled.div<{ $direction: string }>`
-  position: absolute;
-  z-index: 10;
-  ${props => getResizeHandleStyle(props.$direction)}
-`
-
-export const Window: React.FC<WindowProps> = ({ window, children, isDark = false }) => {
-  const [isInteracting, setIsInteracting] = useState(false)
-  const windowRef = useRef<HTMLDivElement>(null)
-  
+export const Window: React.FC<WindowProps> = ({ window, children, isActive }) => {
   const { 
-    closeWindow, 
-    focusWindow, 
     updateWindowPosition, 
-    toggleMaximize 
-  } = useWindowStore()
-
-  // Get resize constraints from window state
-  const resizeConstraints = window.constraints
-
-  // Create OS-level drag handler that also manages interaction state
-  const handleMouseDown = createDragHandler(
-    window.id,
-    window.position,
-    window.isMaximized,
-    (id, pos) => {
-      setIsInteracting(true)
-      updateWindowPosition(id, pos)
-    },
+    closeWindow, 
     focusWindow,
-    () => setIsInteracting(false) // Reset interaction state when drag ends
-  )
+    toggleMaximize
+  } = useWindowStore()
+  
+  // Get theme mode from styled-components theme context
+  // This will automatically follow system theme or any active custom theme
+  const dragRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [isInteracting, setIsInteracting] = useState(false)
 
-  // Create OS-level resize handler that also manages interaction state  
+  // Create resize handler using the OS behaviors
   const handleResize = createResizeHandler(
     window.id,
     window.position,
@@ -141,81 +72,103 @@ export const Window: React.FC<WindowProps> = ({ window, children, isDark = false
       updateWindowPosition(id, pos)
     },
     () => setIsInteracting(false), // Reset interaction state when resize ends
-    resizeConstraints
+    window.constraints
   )
 
-  const handleWindowClick = () => {
-    focusWindow(window.id)
+  // Handle maximize with proper focus + toggle behavior
+  const handleMaximize = () => {
+    focusWindow(window.id) // Bring window to front
+    toggleMaximize(window.id)
   }
 
-  if (window.isMinimized) {
-    return null
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isActive) {
+      focusWindow(window.id)
+    }
+    
+    // Don't allow dragging if window is maximized
+    if (window.isMaximized) {
+      return
+    }
+    
+    // Calculate offset relative to current window position, not the DOM element
+    setDragOffset({
+      x: e.clientX - window.position.x,
+      y: e.clientY - window.position.y
+    })
+    setIsDragging(true)
+    setIsInteracting(true)
   }
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging && dragRef.current) {
+        const newX = e.clientX - dragOffset.x
+        const newY = e.clientY - dragOffset.y
+        
+        // Apply OS-level constraints: windows cannot go above the WindowArea (which is already below header)
+        // and should stay within reasonable bounds
+        const constrainedX = Math.max(-window.position.width + 100, Math.min(globalThis.innerWidth - 100, newX))
+        const constrainedY = Math.max(0, Math.min(globalThis.innerHeight - HEADER_HEIGHT - 100, newY))
+        
+        updateWindowPosition(window.id, { x: constrainedX, y: constrainedY })
+      }
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+      setIsInteracting(false)
+    }
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+      }, [isDragging, dragOffset, window.id, updateWindowPosition])
 
   return (
     <WindowContainer
-      ref={windowRef}
-      $isMaximized={window.isMaximized}
-      $zIndex={window.zIndex}
+      ref={dragRef}
+      $isActive={isActive}
       $isInteracting={isInteracting}
-      $isDark={isDark}
+      $isMaximized={window.isMaximized}
+      $windowZIndex={window.zIndex}
       style={{
         left: window.position.x,
         top: window.position.y,
         width: window.position.width,
-        height: window.position.height
+        height: window.position.height,
       }}
-      onClick={handleWindowClick}
-      initial={{ scale: 0.9, opacity: 0 }}
+      initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.9, opacity: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      exit={{ scale: 0.95, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
     >
-      <WindowHeader onMouseDown={handleMouseDown} $isDark={isDark}>
-        <WindowControls>
-          <ControlButton 
-            $hoverColor="#ff5f57"
-            $isDark={isDark}
-            $showIcon={true}
-            onClick={(e) => {
-              e.stopPropagation()
-              closeWindow(window.id)
-            }}
-          />
-
-          <ControlButton 
-            $hoverColor="#28ca42"
-            $isDark={isDark}
-            onClick={(e) => {
-              e.stopPropagation()
-              focusWindow(window.id) // Bring window to front
-              toggleMaximize(window.id)
-            }}
-          />
-        </WindowControls>
-        <WindowTitle $isDark={isDark}>{window.title}</WindowTitle>
-        <div style={{ width: '32px' }} /> {/* Spacer for center alignment */}
-      </WindowHeader>
-      
-      <WindowContent data-window-content>
+      <WindowHeader
+        title={window.title}
+        onClose={() => closeWindow(window.id)}
+        onMaximize={handleMaximize}
+        onMouseDown={handleMouseDown}
+        showIcons={true}
+        asMotion={true}
+      />
+      <WindowContent>
         {children}
       </WindowContent>
       
-      {!window.isMaximized && (
-        <>
-          {/* Edge handles */}
-          <ResizeHandle $direction="n" onMouseDown={handleResize('n')} />
-          <ResizeHandle $direction="s" onMouseDown={handleResize('s')} />
-          <ResizeHandle $direction="e" onMouseDown={handleResize('e')} />
-          <ResizeHandle $direction="w" onMouseDown={handleResize('w')} />
-          
-          {/* Corner handles */}
-          <ResizeHandle $direction="ne" onMouseDown={handleResize('ne')} />
-          <ResizeHandle $direction="nw" onMouseDown={handleResize('nw')} />
-          <ResizeHandle $direction="se" onMouseDown={handleResize('se')} />
-          <ResizeHandle $direction="sw" onMouseDown={handleResize('sw')} />
-        </>
-      )}
+      {/* Resize handles for all directions */}
+      {!window.isMaximized && RESIZE_DIRECTIONS.map(direction => (
+        <ResizeHandle
+          key={direction}
+          direction={direction}
+          onMouseDown={handleResize(direction)}
+        />
+      ))}
     </WindowContainer>
   )
 }

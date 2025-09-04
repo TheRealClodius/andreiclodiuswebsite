@@ -1,5 +1,5 @@
 // Export all styled components for chat
-export * from './animations'
+// animations now handled by motion tokens
 export * from './layout'
 export * from './message'
 export * from './attachments'

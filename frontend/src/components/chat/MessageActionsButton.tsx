@@ -1,69 +1,72 @@
 import React from 'react'
-import styled from 'styled-components'
 import { HiChevronDown } from 'react-icons/hi'
+import styled from 'styled-components'
 
 interface MessageActionsButtonProps {
   onClick: () => void
   className?: string
+  isOnUserBubble?: boolean  // Whether this button is on a user (blue) bubble
 }
 
-const ActionsButton = styled.button`
+const StyledActionsButton = styled.button<{ $isOnUserBubble?: boolean }>`
   width: 24px;
   height: 24px;
+  border-radius: ${({ theme }) => theme.semanticRadii.button.small};
+  padding: 0;
   border: none;
-  background: ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? '#424242' // Solid dark gray in dark mode
-      : '#f5f5f5' // Solid light gray in light mode
-  };
-  color: ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? '#e0e0e0' // Light icon in dark mode
-      : '#666666' // Dark icon in light mode
-  };
   cursor: pointer;
-  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  box-shadow: 0 2px 4px ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? 'rgba(0, 0, 0, 0.3)' // Subtle shadow in dark mode
-      : 'rgba(0, 0, 0, 0.1)' // Subtle shadow in light mode
+  font-family: ${({ theme }) => theme.fontFamily.sans.join(', ')};
+  
+  /* Always visible when bubble is hovered - adapt colors based on bubble type */
+  background: ${({ theme, $isOnUserBubble }) => $isOnUserBubble 
+    ? theme.palette.chat.messageActions.userBackground
+    : theme.palette.chat.messageActions.assistantBackground
+  };
+  color: ${({ theme, $isOnUserBubble }) => $isOnUserBubble 
+    ? theme.palette.chat.messageActions.userText
+    : theme.palette.chat.messageActions.assistantText
   };
   
+  /* Subtle hover state for additional feedback */
   &:hover {
-    background: ${() => 
-      window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? '#424242' // Same background as idle
-        : '#f5f5f5' // Same background as idle
+    background: ${({ theme, $isOnUserBubble }) => $isOnUserBubble 
+      ? theme.palette.chat.messageActions.userBackgroundHover
+      : theme.palette.chat.messageActions.assistantBackgroundHover
     };
-    color: ${() => 
-      window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? '#ffffff' // Brighter icon on hover in dark mode
-        : '#333333' // Darker icon on hover in light mode
-    };
+    transform: scale(1.05);
   }
   
+  /* Active state */
   &:active {
-    background: ${() => 
-      window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? '#525252' // Slightly lighter on click in dark mode
-        : '#e0e0e0' // Slightly darker on click in light mode
-    };
     transform: scale(0.95);
+  }
+  
+  /* Smooth transitions */
+  transition: all ${({ theme }) => theme.motion.duration.fast}ms ${({ theme }) => theme.motion.easing.easeOut.join(', ')};
+  
+  /* Focus ring for accessibility */
+  &:focus-visible {
+    box-shadow: ${({ theme }) => theme.createFocusRing(theme.palette.interactive.focus.ring)};
+    outline: none;
   }
 `
 
 export const MessageActionsButton: React.FC<MessageActionsButtonProps> = ({ 
   onClick, 
-  className 
+  className,
+  isOnUserBubble = false
 }) => {
   return (
-    <ActionsButton onClick={onClick} className={className}>
+    <StyledActionsButton
+      onClick={onClick}
+      className={className}
+      $isOnUserBubble={isOnUserBubble}
+      aria-label="Message actions"
+    >
       <HiChevronDown size={14} />
-    </ActionsButton>
+    </StyledActionsButton>
   )
 }

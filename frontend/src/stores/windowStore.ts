@@ -167,7 +167,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
               previousPosition: w.isMaximized ? w.previousPosition : w.position,
               position: w.isMaximized 
                 ? (w.previousPosition || w.position) // Restore saved position or fallback to current
-                : { x: 0, y: HEADER_HEIGHT, width: globalThis.innerWidth, height: globalThis.innerHeight - HEADER_HEIGHT }
+                : { x: 0, y: 0, width: globalThis.innerWidth, height: globalThis.innerHeight - HEADER_HEIGHT }
             }
           : w
       )

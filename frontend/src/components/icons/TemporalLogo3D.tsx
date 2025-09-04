@@ -1,6 +1,7 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+// import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 
 interface TemporalLogo3DProps {
   size?: number
@@ -10,20 +11,28 @@ interface TemporalLogo3DProps {
 // Global animation start time that persists across all component lifecycles
 const GLOBAL_ANIMATION_START = Date.now()
 
-// Environment map setup component
-const EnvironmentMap = React.memo(() => {
+// HDRI Environment map setup component
+const HDRIEnvironmentMap = React.memo(() => {
   const { scene, gl } = useThree()
   
   useMemo(() => {
-    // Create procedural environment map
     const pmremGenerator = new THREE.PMREMGenerator(gl)
     
-    // Create a simple gradient environment
+    // Temporarily use procedural environment while we fix HDRI loading
+    console.log('Using procedural environment for now')
     const envMapRenderTarget = pmremGenerator.fromScene(createEnvironmentScene())
     scene.environment = envMapRenderTarget.texture
     
+    // TODO: Re-enable HDRI loading once we fix the import issues
+    // const loader = new RGBELoader()  
+    // loader.load('/hdri/meadow_4k.hdr', (texture) => {
+    //   texture.mapping = THREE.EquirectangularReflectionMapping
+    //   const envMapRenderTarget = pmremGenerator.fromEquirectangular(texture)
+    //   scene.environment = envMapRenderTarget.texture
+    //   texture.dispose()
+    // })
+    
     return () => {
-      envMapRenderTarget.dispose()
       pmremGenerator.dispose()
     }
   }, [scene, gl])
@@ -77,7 +86,7 @@ const createEnvironmentScene = () => {
   return envScene
 }
 
-EnvironmentMap.displayName = 'EnvironmentMap'
+HDRIEnvironmentMap.displayName = 'HDRIEnvironmentMap'
 
 // Create realistic procedural textures inspired by A23D-style materials
 const createRealisticTexture = (type: 'brushed-metal' | 'chrome' | 'anodized' | 'glass') => {
@@ -293,7 +302,7 @@ const AnimatedShape = React.memo(() => {
         envMapIntensity: 0.8 + Math.random() * 0.6, // 0.8-1.4
         clearcoat: 0.3 + Math.random() * 0.6, // 0.3-0.9
         clearcoatRoughness: 0.05 + Math.random() * 0.2, // 0.05-0.25
-        transmission: 0,
+        transmission: 0.4,
         opacity: 1.0
       },
       {
@@ -306,7 +315,7 @@ const AnimatedShape = React.memo(() => {
         transmission: 0.2 + Math.random() * 0.4, // 0.2-0.6
         thickness: 0.5 + Math.random() * 1.0, // 0.5-1.5
         ior: 1.4 + Math.random() * 0.4, // 1.4-1.8
-        opacity: 0.8 + Math.random() * 0.2 // 0.8-1.0
+        opacity: 0.9 + Math.random() * 0.2 // 0.8-1.0
       },
       {
         // Glass-like materials
@@ -318,7 +327,7 @@ const AnimatedShape = React.memo(() => {
         transmission: 0.4 + Math.random() * 0.5, // 0.4-0.9
         thickness: 0.3 + Math.random() * 0.7, // 0.3-1.0
         ior: 1.5 + Math.random() * 0.3, // 1.5-1.8
-        opacity: 0.7 + Math.random() * 0.1 // 0.7-1.0
+        opacity: 0.9 + Math.random() * 0.1 // 0.9-1.0
       }
     ]
     
@@ -465,8 +474,8 @@ export const TemporalLogo3D = React.memo<TemporalLogo3DProps>(({
         }}
         shadows
       >
-        {/* Environment Map - re-enabled for realistic reflections */}
-        <EnvironmentMap />
+        {/* HDRI Environment Map - realistic meadow lighting */}
+        <HDRIEnvironmentMap />
         
         {/* Balanced lighting to show material detail */}
         <ambientLight intensity={0.3} color="#f0f0f0" />

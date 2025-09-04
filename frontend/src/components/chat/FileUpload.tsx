@@ -5,9 +5,9 @@ import {
   FileChip, 
   FileName, 
   FilePreview, 
-  FilePreviewImage, 
-  RemoveFileButton
+  FilePreviewImage
 } from '../../styles/chat'
+import { Button } from '../../design-system'
 import { isImageType } from '../../utils/chatUtils'
 
 interface FileChipsProps {
@@ -36,9 +36,21 @@ export const FileChips: React.FC<FileChipsProps> = ({
             )}
           </FilePreview>
           <FileName>{file.name}</FileName>
-          <RemoveFileButton onClick={() => onRemoveFile(index)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onRemoveFile(index)}
+            asMotion
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '6px',
+              padding: 0,
+              minHeight: 'auto'
+            }}
+          >
             <HiX size={14} />
-          </RemoveFileButton>
+          </Button>
         </FileChip>
       ))}
     </SelectedFiles>

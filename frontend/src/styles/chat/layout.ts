@@ -16,6 +16,54 @@ export const ChatContainer = styled.div`
   };
 `
 
+interface ChatContainerWithBackgroundProps {
+  $backgroundImage?: string | null
+}
+
+export const ChatContainerWithBackground = styled.div<ChatContainerWithBackgroundProps>`
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  
+  /* Background image */
+  ${props => props.$backgroundImage && `
+    background-image: url(${props.$backgroundImage});
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  `}
+  
+  /* Overlay for readability */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: ${() => 
+      window.matchMedia('(prefers-color-scheme: dark)').matches 
+        ? 'linear-gradient(to bottom, transparent 0%, rgba(26, 26, 26, 0.85) 100%)'
+        : 'linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.85) 100%)'
+    };
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  /* Ensure content is above overlay */
+  > * {
+    position: relative;
+    z-index: 2;
+  }
+  
+  color: ${() => 
+    window.matchMedia('(prefers-color-scheme: dark)').matches 
+      ? '#e0e0e0'     // Light text in dark mode
+      : '#333'        // Dark text in light mode
+  };
+`
+
 export const MessagesContainer = styled.div`
   flex: 1;
   padding: 20px;

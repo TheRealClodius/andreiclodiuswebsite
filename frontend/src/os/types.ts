@@ -29,7 +29,6 @@ export interface OSWindowCallbacks {
   onDrag: (windowId: string, position: { x: number; y: number }) => void
   onResize: (windowId: string, position: { x: number; y: number; width: number; height: number }) => void
   onClose: (windowId: string) => void
-  onMinimize: (windowId: string) => void
   onMaximize: (windowId: string) => void
   onFocus: (windowId: string) => void
 }

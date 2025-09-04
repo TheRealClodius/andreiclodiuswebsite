@@ -1,6 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
-import { motion } from 'framer-motion'
+import { motion as framerMotion } from 'framer-motion'
+import { motion } from '../../design-system'
 
 export interface DropdownItemData {
   id: string
@@ -16,32 +17,24 @@ interface DropdownItemProps {
   children?: React.ReactNode
 }
 
-const StyledDropdownItem = styled(motion.div)<{ $hasSubmenu?: boolean }>`
+const StyledDropdownItem = styled(framerMotion.div)<{ $hasSubmenu?: boolean }>`
   position: relative;
   width: 100%;
   background: transparent;
   border: none;
-  padding: 4px 6px;
+  padding: ${props => props.theme.semanticSpacing.interactive.dropdownItemPadding};
   text-align: left;
-  color: ${() => 
-    window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? '#e0e0e0' // Light text in dark mode
-      : '#333' // Dark text in light mode
-  };
+  color: ${props => props.theme.palette.text.primary};
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 14px;
-  border-radius: 3px;
+  font-size: ${props => props.theme.fontSize.sm};
+  border-radius: ${props => props.theme.semanticRadii.dropdown.item};
   transition: background-color 0.15s ease;
 
   &:hover {
-    background: ${() => 
-      window.matchMedia('(prefers-color-scheme: dark)').matches 
-        ? 'rgba(255, 255, 255, 0.1)' // Light hover background in dark mode
-        : 'rgba(0, 0, 0, 0.1)' // Dark hover background in light mode
-    };
+    background: ${props => props.theme.palette.interactive.button.ghost.backgroundHover};
   }
 `
 
@@ -99,19 +92,7 @@ export const DropdownItem: React.FC<DropdownItemProps> = ({
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      whileHover={{ 
-        scale: 1,
-        transition: { 
-          type: "spring", 
-          stiffness: 400, 
-          damping: 25, 
-          mass: 0.3 
-        } 
-      }}
-      whileTap={{ 
-        scale: 1,
-        transition: { duration: 0.1 }
-      }}
+      {...motion.presets.itemHover}
     >
       <ItemContent>
         {item.icon && (

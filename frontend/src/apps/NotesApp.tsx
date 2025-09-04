@@ -82,7 +82,7 @@ const NotesContainer = styled.div`
   display: flex;
   flex-direction: column;
   background: transparent;
-  color: #e0e0e0; /* Explicit light color for Safari compatibility */
+  color: ${props => props.theme.palette.text.primary};
 `
 
 // Wrapper for textarea and custom placeholder
@@ -141,7 +141,7 @@ const NotesTextarea = styled.textarea`
   line-height: 1.6;
   resize: none;
   background: transparent;
-  color: #e0e0e0; /* Explicit light color for Safari compatibility */
+  color: ${props => props.theme.palette.text.primary};
   position: relative;
   z-index: 2;
   
@@ -153,20 +153,20 @@ const NotesTextarea = styled.textarea`
   
   /* Override browser selection colors to maintain dark theme */
   &::selection {
-    background: rgba(255, 255, 255, 0.2);
-    color: #e0e0e0;
+    background: ${props => props.theme.palette.interactive.focus.background};
+    color: ${props => props.theme.palette.text.primary};
   }
   
   &::-moz-selection {
-    background: rgba(255, 255, 255, 0.2);
-    color: #e0e0e0;
+    background: ${props => props.theme.palette.interactive.focus.background};
+    color: ${props => props.theme.palette.text.primary};
   }
 `
 
 const NotesStatus = styled.div`
   padding: 8px 20px;
   font-size: 12px;
-  color: #b0b0b0; /* Explicit muted light color for Safari compatibility */
+  color: ${props => props.theme.palette.text.secondary};
   background: transparent;
   border-top: 0.5px solid rgba(128, 128, 128, 0.2);
   display: flex;

@@ -10,81 +10,43 @@ interface ReplyAttachmentProps {
 }
 
 const ReplyContainer = styled.div<{ $isHumanMessage: boolean }>`
-  background: ${props => {
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    if (props.$isHumanMessage) {
-      // Human message (blue bubble) - darker background
-      return isDark 
-        ? 'rgba(0, 0, 0, 0.15)' // Darker background in dark mode
-        : 'rgba(255, 255, 255, 0.25)' // Light background in light mode
-    } else {
-      // AI/other message (gray bubble) - lighter background
-      return isDark 
-        ? 'rgba(255, 255, 255, 0.08)' // Light background in dark mode
-        : 'rgba(0, 0, 0, 0.05)' // Dark background in light mode
-    }
-  }};
-  border-left: 3px solid ${props => {
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    if (props.$isHumanMessage) {
-      // Human message - white/light accent
-      return isDark 
-        ? 'rgba(255, 255, 255, 0.4)' 
-        : 'rgba(255, 255, 255, 0.7)'
-    } else {
-      // AI/other message - blue accent
-      return isDark 
-        ? 'rgba(147, 197, 253, 0.6)' 
-        : 'rgba(59, 130, 246, 0.6)'
-    }
-  }};
-  border-radius: 6px;
-  padding: 8px 12px;
-  margin-bottom: 8px;
+  background: ${props => props.$isHumanMessage 
+    ? props.theme.palette.chat.reply.userBackground
+    : props.theme.palette.chat.reply.assistantBackground
+  };
+  border-left: 3px solid ${props => props.$isHumanMessage 
+    ? props.theme.palette.chat.reply.userBorder
+    : props.theme.palette.chat.reply.assistantBorder
+  };
+  border-radius: ${({ theme }) => theme.semanticRadii.chat.bubble.tail};
+  padding: ${({ theme }) => `${theme.spacing[2]} ${theme.spacing[3]}`}; /* 8px 12px */
+  margin-bottom: ${({ theme }) => theme.spacing[2]}; /* 8px */
 `
 
 const OriginalSender = styled.div<{ $isHumanMessage: boolean; $userColor?: string }>`
-  font-size: 12px;
-  font-weight: 600;
+  font-size: ${({ theme }) => theme.fontSize.xs};
+  font-weight: ${({ theme }) => theme.fontWeight.semibold};
   color: ${props => {
     if (props.$userColor) {
       // Use specific user color
       return props.$userColor;
     }
     
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    if (props.$isHumanMessage) {
-      // Human message - white/light text
-      return isDark 
-        ? 'rgba(255, 255, 255, 0.9)' 
-        : 'rgba(255, 255, 255, 0.95)'
-    } else {
-      // AI/other message - blue text
-      return isDark 
-        ? 'rgba(147, 197, 253, 0.9)' 
-        : 'rgba(59, 130, 246, 0.9)'
-    }
+    return props.$isHumanMessage 
+      ? props.theme.palette.chat.reply.userSender
+      : props.theme.palette.chat.reply.assistantSender;
   }};
-  margin-bottom: 4px;
+  margin-bottom: ${({ theme }) => theme.spacing[1]}; /* 4px */
 `
 
 const OriginalMessage = styled.div<{ $isHumanMessage: boolean }>`
-  font-size: 13px;
-  line-height: 1.4;
-  color: ${props => {
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    if (props.$isHumanMessage) {
-      // Human message - white/light text with good contrast
-      return isDark 
-        ? 'rgba(255, 255, 255, 0.75)' 
-        : 'rgba(255, 255, 255, 0.85)'
-    } else {
-      // AI/other message - standard text colors
-      return isDark 
-        ? 'rgba(255, 255, 255, 0.8)' 
-        : 'rgba(0, 0, 0, 0.7)'
-    }
-  }};
+  font-size: ${({ theme }) => theme.fontSize.xs};
+  font-weight: ${({ theme }) => theme.fontWeight.normal};
+  line-height: ${({ theme }) => theme.lineHeight.snug};
+  color: ${props => props.$isHumanMessage 
+    ? props.theme.palette.chat.reply.userText
+    : props.theme.palette.chat.reply.assistantText
+  };
   word-wrap: break-word;
   overflow-wrap: break-word;
   

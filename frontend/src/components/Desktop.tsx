@@ -3,19 +3,51 @@ import styled from 'styled-components'
 import { AnimatePresence } from 'framer-motion'
 import { HiPlus } from 'react-icons/hi'
 import { TemporalLogo3D } from './icons/TemporalLogo3D'
+import { HeaderButton } from '../design-system'
 
 import { useWindowStore, type AppSizeConfig } from '../stores/windowStore'
 import { Window } from './Window'
 import { getAppComponent, APP_REGISTRY } from '../apps/appRegistry'
 import { HEADER_HEIGHT } from '../constants/layout'
-import { MenuItem, DropdownItemData } from './menu'
+import { MenuItem, DropdownItemData, Dropdown } from './menu'
 import { useSystemTheme } from '../hooks/useSystemTheme'
 import { DEFAULT_OS_THEME, DARK_OS_THEME } from '../os/theme'
+import { useTheme } from '../design-system'
+
+const VideoBackground = styled.video`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: -2;
+  pointer-events: none;
+`
+
+interface VideoOverlayProps {
+  $blur?: number;
+  $opacity?: number;
+  $backgroundColor?: string;
+}
+
+const VideoOverlay = styled.div<VideoOverlayProps>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  backdrop-filter: blur(${props => props.$blur || 0}px);
+  background-color: ${props => props.$backgroundColor || 'rgba(0, 0, 0, 0)'};
+  opacity: ${props => props.$opacity !== undefined ? props.$opacity : 1};
+  transition: all 0.3s ease;
+`
 
 const DesktopContainer = styled.div`
   width: 100vw;
   height: 100vh;
-  background:rgb(142, 142, 142);
   position: relative;
   overflow: hidden;
 `
@@ -26,12 +58,12 @@ const Header = styled.header<{ $backgroundColor: string }>`
   left: 0;
   right: 0;
   height: ${HEADER_HEIGHT}px;
-  background: ${props => props.$backgroundColor};
+  background: ${props => props.theme.windowColors.headerBackground};
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0);
+  border-bottom: 1px solid ${props => props.theme.windowColors.headerBorder};
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 ${props => props.theme.spacing[1]};
   z-index: 10000;
   transition: background 200ms ease-out;
   /* Use transform3d to trigger GPU acceleration */
@@ -44,26 +76,13 @@ const LeftSection = styled.div`
   gap: 0px;
 `
 
-const TemporalLogoButton = styled.button<{ $textColor: string }>`
-  background: transparent;
-  border: none;
-  color: ${props => props.$textColor};
-  cursor: pointer;
-  transition: all 0.2s ease;
+const TemporalLogoContainer = styled.div`
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0px 12px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 6px;
-  /* Use transform3d to trigger GPU acceleration */
-  transform: translate3d(0, 0, 0);
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
 `
+
+// Remove old TemporalLogoButton - now using design system HeaderButton
 
 const MenuBar = styled.div`
   display: flex;
@@ -84,7 +103,9 @@ const WindowArea = styled.div`
 export const Desktop: React.FC = () => {
   const { windows, openWindow } = useWindowStore()
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const [showTemporalDropdown, setShowTemporalDropdown] = useState(false)
   const systemIsDark = useSystemTheme()
+  const { themeMode, setThemeMode, getAvailableThemes } = useTheme()
 
   // Track only the maximized window's essential info to avoid recalculation during drags
   const maximizedWindowInfo = useMemo(() => {
@@ -156,29 +177,55 @@ export const Desktop: React.FC = () => {
 
   const handleMenuToggle = (menuName: string) => {
     setOpenMenu(openMenu === menuName ? null : menuName)
+    setShowTemporalDropdown(false)
   }
 
   const handleMenuHover = (menuName: string) => {
-    if (openMenu !== null) {
+    if (openMenu !== null || showTemporalDropdown) {
       setOpenMenu(menuName)
+      setShowTemporalDropdown(false)
     }
   }
 
   const handleMenuClose = () => {
     setOpenMenu(null)
+    setShowTemporalDropdown(false)
   }
 
-  const handleTemporalLogoClick = () => {
+  const handleTemporalLogoClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log('Temporal Logo clicked!')
+    
+    // Original temporal logo functionality
     const hour = new Date().getHours()
     const timeState = hour >= 6 && hour < 10 ? 'Morning Focus' :
                      hour >= 10 && hour < 16 ? 'Peak Productivity' :
                      hour >= 16 && hour < 20 ? 'Creative Flow' : 'Night Mode'
     
-    console.log(`Temporal Logo clicked! Current state: ${timeState} (${hour}:00)`)
+    console.log(`Current state: ${timeState} (${hour}:00)`)
     // TODO: Maybe trigger a shape transition or show time widget
+    
+    // Also show/hide the dropdown
+    setShowTemporalDropdown(!showTemporalDropdown)
+    setOpenMenu(null) // Close any open menus
+  }
+
+  const handleTemporalLogoHover = () => {
+    setShowTemporalDropdown(true)
+    setOpenMenu(null)
   }
 
   const visibleWindows = windows.filter(w => !w.isMinimized)
+
+  // Dynamic overlay values based on window state
+  const hasOpenWindows = visibleWindows.length > 0
+  const overlayBlur = hasOpenWindows ? 100 : 10
+  const overlayOpacity = hasOpenWindows ? 0.9 : 0.2
+  
+  // Theme-aware overlay background color
+  const overlayBackgroundColor = systemIsDark 
+    ? 'rgba(11, 11, 11, 0.3)'   // Darker overlay for dark theme
+    : 'rgba(255, 255, 255, 0.25)' // Lighter overlay for light theme
 
   // Get real saved notes from storage
   const [savedNotes, setSavedNotes] = useState<Array<{ id: string; title: string; lastModified: Date }>>([])
@@ -196,6 +243,63 @@ export const Desktop: React.FC = () => {
       setSavedNotes(notesList)
     }
   }, [openMenu])
+
+  // Get available themes for dropdown
+  const availableThemes = getAvailableThemes()
+  
+  // Theme display names mapping
+  const themeDisplayNames: Record<string, string> = {
+    'system': 'System',
+    'light': 'Light',
+    'dark': 'Dark',
+    'pink-light': 'Pink Light',
+    'pink-dark': 'Pink Dark',
+    'classic': 'Classic',
+    'high-contrast': 'High Contrast'
+  }
+
+  // Create temporal logo dropdown items with theme selection
+  const temporalDropdownItems: DropdownItemData[] = [
+    {
+      id: 'clodius-os-version',
+      label: 'Clodius OS 0.1.0',
+      onClick: () => {
+        console.log('Clodius OS version clicked')
+        // Could show more info or changelog
+      }
+    },
+    {
+      id: 'theme-divider',
+      label: '─────────────',
+      onClick: () => {} // Divider, no action
+    },
+    {
+      id: 'theme-section',
+      label: 'Themes',
+      submenu: [
+        // Built-in themes
+        ...availableThemes.builtin.map(themeName => ({
+          id: `theme-${themeName}`,
+          label: `${themeDisplayNames[themeName] || themeName}${themeMode === themeName ? ' ✓' : ''}`,
+          onClick: () => {
+            setThemeMode(themeName)
+            setShowTemporalDropdown(false)
+            console.log(`Switched to ${themeName} theme`)
+          }
+        })),
+        // Custom themes
+        ...availableThemes.custom.map(themeName => ({
+          id: `theme-${themeName}`,
+          label: `${themeDisplayNames[themeName] || themeName}${themeMode === themeName ? ' ✓' : ''}`,
+          onClick: () => {
+            setThemeMode(themeName)
+            setShowTemporalDropdown(false)
+            console.log(`Switched to ${themeName} theme`)
+          }
+        }))
+      ]
+    }
+  ]
 
   // Create menu data structure
   const menuItems = [
@@ -253,16 +357,46 @@ export const Desktop: React.FC = () => {
 
   return (
     <DesktopContainer onClick={handleMenuClose}>
+      <VideoBackground 
+        src="/underwater.mov"
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
+      <VideoOverlay 
+        $blur={overlayBlur}
+        $opacity={overlayOpacity}
+        $backgroundColor={overlayBackgroundColor}
+      />
       <Header $backgroundColor={headerBackgroundColor}>
         <LeftSection>
-          <TemporalLogoButton 
-            $textColor={headerTextColor}
-            onClick={handleTemporalLogoClick}
+          <TemporalLogoContainer 
+            onMouseEnter={() => {
+              // Trigger hover behavior when there are open siblings (like MenuItem does)
+              if (openMenu !== null) {
+                handleTemporalLogoHover()
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
-                      <TemporalLogo3D
-            size={28}
-          />
-          </TemporalLogoButton>
+            <HeaderButton 
+              isOpen={showTemporalDropdown}
+              onClick={handleTemporalLogoClick}
+              asMotion
+            >
+              <TemporalLogo3D size={28} />
+            </HeaderButton>
+            
+            <AnimatePresence>
+              {showTemporalDropdown && (
+                <Dropdown 
+                  items={temporalDropdownItems}
+                  onClose={handleMenuClose}
+                />
+              )}
+            </AnimatePresence>
+          </TemporalLogoContainer>
           
           <MenuBar>
             {menuItems.map(menu => (
@@ -274,7 +408,7 @@ export const Desktop: React.FC = () => {
                 onToggle={() => handleMenuToggle(menu.id)}
                 onClose={handleMenuClose}
                 onHover={() => handleMenuHover(menu.id)}
-                hasOpenSibling={openMenu !== null && openMenu !== menu.id}
+                hasOpenSibling={(openMenu !== null && openMenu !== menu.id) || showTemporalDropdown}
                 textColor={headerTextColor}
               />
             ))}
@@ -285,11 +419,12 @@ export const Desktop: React.FC = () => {
       <WindowArea>
         <AnimatePresence>
           {visibleWindows.map(window => {
-            const appConfig = APP_REGISTRY[window.appType]
-            // Determine theme: force app theme or adapt to system theme
-            const isDark = appConfig?.forceTheme ? appConfig.isDark : systemIsDark
+            // Find the highest zIndex among all visible windows
+            const maxZIndex = Math.max(...visibleWindows.map(w => w.zIndex))
+            const isActiveWindow = window.zIndex === maxZIndex
+            
             return (
-              <Window key={window.id} window={window} isDark={isDark}>
+              <Window key={window.id} window={window} isActive={isActiveWindow}>
                 {getAppComponent(window.appType, window.id)}
               </Window>
             )
